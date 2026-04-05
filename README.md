@@ -4,7 +4,7 @@ A REST API for a Knowledge Hub platform built with NestJS. Manages users, articl
 
 ## Requirements
 
-- Node.js >= 22.14.0
+- Node.js >= 24.10.0
 - npm
 
 ## Installation
