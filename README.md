@@ -98,19 +98,43 @@ Allowed `sortBy` values per list endpoint:
 
 ## Testing
 
-With the application running, open a new terminal and run:
+**After starting the server**, open another terminal and enter:
+
+To run all tests without authorization
 
 ```
 npm run test
 ```
 
-To run a single suite:
+To run only one of all test suites
 
 ```
 npm run test -- <path to suite>
 ```
 
-`npm run test` also runs in-process tests under `src/additional-tests/` (pagination and sorting).
+To run all test with authorization (It will be implemented later)
+
+```
+npm run test:auth
+```
+
+To run only specific test suite with authorization (It will be implemented later)
+
+```
+npm run test:auth -- <path to suite>
+```
+
+To run refresh token tests (It will be implemented later)
+
+```
+npm run test:refresh
+```
+
+To run RBAC (role-based access control) tests (It will be implemented later)
+
+```
+npm run test:rbac
+```
 
 ### Auto-fix and format
 

@@ -1,4 +1,9 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CommentService } from '../comment/comment.service';
 import { ArticleStatus } from '../common/enums';
@@ -19,7 +24,8 @@ export class ArticleService {
   findAll(filters: FilterArticleDto): Article[] {
     return this.articles.filter((article) => {
       if (filters.status && article.status !== filters.status) return false;
-      if (filters.categoryId && article.categoryId !== filters.categoryId) return false;
+      if (filters.categoryId && article.categoryId !== filters.categoryId)
+        return false;
       if (filters.tag && !article.tags.includes(filters.tag)) return false;
       return true;
     });
