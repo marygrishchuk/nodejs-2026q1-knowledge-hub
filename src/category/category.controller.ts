@@ -8,19 +8,38 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CATEGORY_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
+import { ListQueryDto } from '../common/dto/list-query.dto';
+import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
+import { buildListResponse } from '../common/utils/list-response.util';
 import { ParseUUIDPipe } from '../common/pipes/parse-uuid.pipe';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
+@ApiTags('Categories')
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Get()
-  findAll() {
-    return this.categoryService.findAll();
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
+  findAll(@Query() query: ListQueryDto) {
+    assertPaginationPair(query);
+    const items = this.categoryService.findAll();
+    return buildListResponse(items, {
+      sortBy: query.sortBy,
+      order: query.order,
+      page: query.page,
+      limit: query.limit,
+      allowedSortKeys: CATEGORY_LIST_SORT_FIELDS,
+    });
   }
 
   @Get(':id')
@@ -35,7 +54,10 @@ export class CategoryController {
   }
 
   @Put(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCategoryDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCategoryDto,
+  ) {
     return this.categoryService.update(id, dto);
   }
 

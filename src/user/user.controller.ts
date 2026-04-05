@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,19 +8,38 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { USER_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
+import { ListQueryDto } from '../common/dto/list-query.dto';
+import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
+import { buildListResponse } from '../common/utils/list-response.util';
 import { ParseUUIDPipe } from '../common/pipes/parse-uuid.pipe';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserService } from './user.service';
 
+@ApiTags('Users')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
+  findAll(@Query() query: ListQueryDto) {
+    assertPaginationPair(query);
+    const items = this.userService.findAll();
+    return buildListResponse(items, {
+      sortBy: query.sortBy,
+      order: query.order,
+      page: query.page,
+      limit: query.limit,
+      allowedSortKeys: USER_LIST_SORT_FIELDS,
+    });
   }
 
   @Get(':id')
@@ -36,10 +54,10 @@ export class UserController {
   }
 
   @Put(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
-    if (Object.keys(dto).length === 0) {
-      throw new BadRequestException('Request body must contain at least one field');
-    }
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePasswordDto,
+  ) {
     return this.userService.update(id, dto);
   }
 

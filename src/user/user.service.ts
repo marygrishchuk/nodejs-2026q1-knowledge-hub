@@ -3,13 +3,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { ArticleService } from '../article/article.service';
 import { CommentService } from '../comment/comment.service';
 import { UserRole } from '../common/enums';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { User } from './interfaces/user.interface';
+
+const CRYPT_SALT = parseInt(process.env.CRYPT_SALT ?? '10', 10);
 
 @Injectable()
 export class UserService {
@@ -37,12 +40,13 @@ export class UserService {
     return user;
   }
 
-  create(dto: CreateUserDto): Omit<User, 'password'> {
+  async create(dto: CreateUserDto): Promise<Omit<User, 'password'>> {
     const now = Date.now();
+    const hashedPassword = await bcrypt.hash(dto.password, CRYPT_SALT);
     const user: User = {
       id: randomUUID(),
       login: dto.login,
-      password: dto.password,
+      password: hashedPassword,
       role: dto.role ?? UserRole.VIEWER,
       createdAt: now,
       updatedAt: now,
@@ -51,22 +55,17 @@ export class UserService {
     return this.excludePassword(user);
   }
 
-  update(id: string, dto: UpdateUserDto): Omit<User, 'password'> {
+  async update(
+    id: string,
+    dto: UpdatePasswordDto,
+  ): Promise<Omit<User, 'password'>> {
     const user = this.findRaw(id);
-
-    if (dto.oldPassword !== undefined || dto.newPassword !== undefined) {
-      if (user.password !== dto.oldPassword) {
-        throw new ForbiddenException('Old password is incorrect');
-      }
-      user.password = dto.newPassword;
-      user.updatedAt = Date.now();
+    const isValid = await bcrypt.compare(dto.oldPassword, user.password);
+    if (!isValid) {
+      throw new ForbiddenException('Old password is incorrect');
     }
-
-    if (dto.role !== undefined) {
-      user.role = dto.role;
-      user.updatedAt = Date.now();
-    }
-
+    user.password = await bcrypt.hash(dto.newPassword, CRYPT_SALT);
+    user.updatedAt = Date.now();
     return this.excludePassword(user);
   }
 
@@ -81,7 +80,7 @@ export class UserService {
   }
 
   private excludePassword(user: User): Omit<User, 'password'> {
-    const { password: _password, ...rest } = user;
-    return rest;
+    const { id, login, role, createdAt, updatedAt } = user;
+    return { id, login, role, createdAt, updatedAt };
   }
 }
