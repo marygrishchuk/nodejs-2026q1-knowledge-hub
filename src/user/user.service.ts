@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ArticleService } from '../article/article.service';
+import { CommentService } from '../comment/comment.service';
 import { UserRole } from '../common/enums';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,6 +14,11 @@ import { User } from './interfaces/user.interface';
 @Injectable()
 export class UserService {
   private users: User[] = [];
+
+  constructor(
+    private readonly articleService: ArticleService,
+    private readonly commentService: CommentService,
+  ) {}
 
   findAll(): Omit<User, 'password'>[] {
     return this.users.map(this.excludePassword);
@@ -68,15 +75,9 @@ export class UserService {
     if (index === -1) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
+    this.articleService.nullifyAuthor(id);
+    this.commentService.deleteByAuthorId(id);
     this.users.splice(index, 1);
-  }
-
-  nullifyArticleAuthor(userId: string): void {
-    // populated after ArticleService is injected
-  }
-
-  removeUserComments(userId: string): void {
-    // populated after CommentService is injected
   }
 
   private excludePassword(user: User): Omit<User, 'password'> {

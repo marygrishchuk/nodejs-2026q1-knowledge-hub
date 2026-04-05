@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { CommentService } from '../comment/comment.service';
 import { ArticleStatus } from '../common/enums';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { FilterArticleDto } from './dto/filter-article.dto';
@@ -9,6 +10,11 @@ import { Article } from './interfaces/article.interface';
 @Injectable()
 export class ArticleService {
   private articles: Article[] = [];
+
+  constructor(
+    @Inject(forwardRef(() => CommentService))
+    private readonly commentService: CommentService,
+  ) {}
 
   findAll(filters: FilterArticleDto): Article[] {
     return this.articles.filter((article) => {
@@ -65,6 +71,7 @@ export class ArticleService {
     if (index === -1) {
       throw new NotFoundException(`Article with id ${id} not found`);
     }
+    this.commentService.deleteByArticleId(id);
     this.articles.splice(index, 1);
   }
 

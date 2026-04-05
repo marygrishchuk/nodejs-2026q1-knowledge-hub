@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -36,6 +37,9 @@ export class UserController {
 
   @Put(':id')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
+    if (Object.keys(dto).length === 0) {
+      throw new BadRequestException('Request body must contain at least one field');
+    }
     return this.userService.update(id, dto);
   }
 
