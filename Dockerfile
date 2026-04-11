@@ -6,9 +6,10 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY nest-cli.json tsconfig.json tsconfig.build.json ./
+COPY prisma ./prisma
 COPY src ./src
 
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 FROM node:24-alpine AS production
 
@@ -22,6 +23,9 @@ RUN npm ci --omit=dev \
   && chown -R node:node /app
 
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 USER node
 
