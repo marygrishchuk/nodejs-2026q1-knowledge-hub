@@ -1,0 +1,56 @@
+name: knowledge-hub
+
+services:
+  app:
+    build: .
+    restart: on-failure
+    ports:
+      - '4000:4000'
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:4000/ || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - knowledge_hub_net
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - knowledge_hub_net
+
+  adminer:
+    profiles:
+      - debug
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - knowledge_hub_net
+
+volumes:
+  postgres_data:
+
+networks:
+  knowledge_hub_net:
+    driver: bridge
