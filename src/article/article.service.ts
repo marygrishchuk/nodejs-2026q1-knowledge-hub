@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ArticleStatus as PrismaArticleStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { ArticleStatus } from '../common/enums';
+import { apiArticleStatusToPrisma } from '../prisma/prisma-enums';
 import { mapArticle } from '../prisma/prisma-mappers';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -45,8 +46,7 @@ export class ArticleService {
       data: {
         title: dto.title,
         content: dto.content,
-        status: (dto.status ??
-          ArticleStatus.DRAFT) as unknown as PrismaArticleStatus,
+        status: apiArticleStatusToPrisma(dto.status ?? ArticleStatus.DRAFT),
         authorId: dto.authorId ?? null,
         categoryId: dto.categoryId ?? null,
         tags: {
@@ -66,10 +66,10 @@ export class ArticleService {
 
     if (dto.tags) {
       const data: Prisma.ArticleUncheckedUpdateInput = {};
-      if (dto.title) data.title = dto.title;
-      if (dto.content) data.content = dto.content;
-      if (dto.status) {
-        data.status = dto.status as unknown as PrismaArticleStatus;
+      if (dto.title !== undefined) data.title = dto.title;
+      if (dto.content !== undefined) data.content = dto.content;
+      if (dto.status !== undefined) {
+        data.status = apiArticleStatusToPrisma(dto.status);
       }
       if (dto.authorId) data.authorId = dto.authorId;
       if (dto.categoryId) data.categoryId = dto.categoryId;
@@ -96,10 +96,10 @@ export class ArticleService {
     }
 
     const data: Prisma.ArticleUncheckedUpdateInput = {};
-    if (dto.title) data.title = dto.title;
-    if (dto.content) data.content = dto.content;
-    if (dto.status) {
-      data.status = dto.status as unknown as PrismaArticleStatus;
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.content !== undefined) data.content = dto.content;
+    if (dto.status !== undefined) {
+      data.status = apiArticleStatusToPrisma(dto.status);
     }
     if (dto.authorId) data.authorId = dto.authorId;
     if (dto.categoryId) data.categoryId = dto.categoryId;
@@ -125,7 +125,7 @@ export class ArticleService {
   ): Prisma.ArticleWhereInput {
     const where: Prisma.ArticleWhereInput = {};
     if (filters.status) {
-      where.status = filters.status as unknown as PrismaArticleStatus;
+      where.status = apiArticleStatusToPrisma(filters.status);
     }
     if (filters.categoryId) {
       where.categoryId = filters.categoryId;

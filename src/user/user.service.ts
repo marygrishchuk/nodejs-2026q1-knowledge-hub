@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { UserRole as PrismaUserRole } from '@prisma/client';
 import { UserRole } from '../common/enums';
+import { apiUserRoleToPrisma } from '../prisma/prisma-enums';
 import { mapUser } from '../prisma/prisma-mappers';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,9 +13,6 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { User } from './interfaces/user.interface';
 
 const CRYPT_SALT = parseInt(process.env.CRYPT_SALT ?? '10', 10);
-
-const toPrismaUserRole = (role: UserRole): PrismaUserRole =>
-  role as unknown as PrismaUserRole;
 
 @Injectable()
 export class UserService {
@@ -45,7 +42,7 @@ export class UserService {
       data: {
         login: dto.login,
         password: hashedPassword,
-        role: toPrismaUserRole(dto.role ?? UserRole.VIEWER),
+        role: apiUserRoleToPrisma(dto.role ?? UserRole.VIEWER),
       },
     });
     return this.excludePassword(mapUser(row));
