@@ -30,9 +30,9 @@ export class UserController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
-  findAll(@Query() query: ListQueryDto) {
+  async findAll(@Query() query: ListQueryDto) {
     assertPaginationPair(query);
-    const items = this.userService.findAll();
+    const items = await this.userService.findAll();
     return buildListResponse(items, {
       sortBy: query.sortBy,
       order: query.order,
@@ -43,18 +43,18 @@ export class UserController {
   }
 
   @Get(':id')
-  findById(@Param('id', ParseUUIDPipe) id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.userService.findById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateUserDto) {
+  async create(@Body() dto: CreateUserDto) {
     return this.userService.create(dto);
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePasswordDto,
   ) {
@@ -63,7 +63,7 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id', ParseUUIDPipe) id: string) {
-    this.userService.delete(id);
+  async delete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.userService.delete(id);
   }
 }

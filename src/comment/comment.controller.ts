@@ -29,9 +29,9 @@ export class CommentController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
-  findByArticleId(@Query() query: CommentListQueryDto) {
+  async findByArticleId(@Query() query: CommentListQueryDto) {
     assertPaginationPair(query);
-    const items = this.commentService.findByArticleId(query.articleId);
+    const items = await this.commentService.findByArticleId(query.articleId);
     return buildListResponse(items, {
       sortBy: query.sortBy,
       order: query.order,
@@ -42,19 +42,19 @@ export class CommentController {
   }
 
   @Get(':id')
-  findById(@Param('id', ParseUUIDPipe) id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.commentService.findById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateCommentDto) {
+  async create(@Body() dto: CreateCommentDto) {
     return this.commentService.create(dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id', ParseUUIDPipe) id: string) {
-    this.commentService.delete(id);
+  async delete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.commentService.delete(id);
   }
 }
