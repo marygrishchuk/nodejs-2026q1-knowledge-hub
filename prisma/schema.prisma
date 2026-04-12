@@ -8,9 +8,9 @@ datasource db {
 }
 
 enum UserRole {
-  ADMIN   @map("admin")
-  EDITOR  @map("editor")
-  VIEWER  @map("viewer")
+  ADMIN  @map("admin")
+  EDITOR @map("editor")
+  VIEWER @map("viewer")
 
   @@map("user_role")
 }
@@ -42,18 +42,21 @@ model Category {
 }
 
 model Article {
-  id         String         @id @default(uuid()) @db.Uuid
+  id         String        @id @default(uuid()) @db.Uuid
   title      String
   content    String
-  status     ArticleStatus  @default(DRAFT)
-  authorId   String?        @db.Uuid
-  author     User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  categoryId String?        @db.Uuid
-  category   Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  status     ArticleStatus @default(DRAFT)
+  authorId   String?       @db.Uuid
+  author     User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  categoryId String?       @db.Uuid
+  category   Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
   comments   Comment[]
   tags       Tag[]
+
+  @@index([status])
+  @@index([categoryId])
 }
 
 model Comment {
