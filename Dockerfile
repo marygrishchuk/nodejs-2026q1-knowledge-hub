@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev \
-  && apk add --no-cache curl \
+  && apk upgrade --no-cache \
   && chown -R node:node /app
 
 COPY --from=build /app/dist ./dist

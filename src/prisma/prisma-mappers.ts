@@ -1,4 +1,4 @@
-import { Article as PrismaArticle, Comment, Tag, User } from '@prisma/client';
+import { Article as PrismaArticle, Prisma, Tag, User } from '@prisma/client';
 import { Article } from '../article/interfaces/article.interface';
 import { Comment as CommentModel } from '../comment/interfaces/comment.interface';
 import { User as UserModel } from '../user/interfaces/user.interface';
@@ -27,7 +27,15 @@ export const mapUser = (row: User): UserModel => ({
   updatedAt: row.updatedAt.getTime(),
 });
 
-export const mapComment = (row: Comment): CommentModel => ({
+export const commentListInclude = {
+  author: { select: { id: true, login: true } },
+} satisfies Prisma.CommentInclude;
+
+export type CommentRow = Prisma.CommentGetPayload<{
+  include: typeof commentListInclude;
+}>;
+
+export const mapComment = (row: CommentRow): CommentModel => ({
   id: row.id,
   content: row.content,
   articleId: row.articleId,
