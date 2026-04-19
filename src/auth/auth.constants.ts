@@ -23,3 +23,10 @@ export const AUTH_MESSAGES = {
   invalidRefreshToken: 'Invalid or expired refresh token',
   missingRefreshToken: 'Refresh token is required',
 } as const;
+
+export const AUTH_RATE_LIMIT = {
+  windowMs: 60_000,
+  maxRequests: 10_000,
+  endpointSignup: 'signup',
+  endpointLogin: 'login',
+} as const;

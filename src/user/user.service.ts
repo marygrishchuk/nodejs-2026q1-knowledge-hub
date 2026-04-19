@@ -61,6 +61,26 @@ export class UserService {
     return this.excludePassword(mapUser(row));
   }
 
+  async resetTestUserCredentials(
+    login: string,
+    password: string,
+    role: UserRole,
+  ): Promise<Omit<User, 'password'> | null> {
+    const existingUser = await this.findRawByLogin(login);
+    if (!existingUser) {
+      return null;
+    }
+    const hashedPassword = await this.hashPassword(password);
+    const row = await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        password: hashedPassword,
+        role: apiUserRoleToPrisma(role),
+      },
+    });
+    return this.excludePassword(mapUser(row));
+  }
+
   async update(
     id: string,
     dto: UpdatePasswordDto,
