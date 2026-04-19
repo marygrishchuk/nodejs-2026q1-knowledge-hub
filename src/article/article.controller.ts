@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -9,8 +10,12 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { readAuthenticatedUser } from '../common/auth/auth-user.util';
+import { UserRole } from '../common/enums';
 import { ARTICLE_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
 import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
 import { buildListResponse } from '../common/utils/list-response.util';
@@ -53,21 +58,49 @@ export class ArticleController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateArticleDto) {
+  async create(@Req() request: Request, @Body() dto: CreateArticleDto) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    if (authenticatedUser.role === UserRole.VIEWER) {
+      throw new ForbiddenException('Forbidden resource');
+    }
+    if (
+      authenticatedUser.role === UserRole.EDITOR &&
+      dto.authorId !== authenticatedUser.userId
+    ) {
+      throw new ForbiddenException('Forbidden resource');
+    }
     return this.articleService.create(dto);
   }
 
   @Put(':id')
   async update(
+    @Req() request: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateArticleDto,
   ) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    if (authenticatedUser.role === UserRole.VIEWER) {
+      throw new ForbiddenException('Forbidden resource');
+    }
+    if (authenticatedUser.role === UserRole.EDITOR) {
+      const article = await this.articleService.findById(id);
+      if (article.authorId !== authenticatedUser.userId) {
+        throw new ForbiddenException('Forbidden resource');
+      }
+      if (dto.authorId && dto.authorId !== authenticatedUser.userId) {
+        throw new ForbiddenException('Forbidden resource');
+      }
+    }
     return this.articleService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ParseUUIDPipe) id: string) {
+  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    if (authenticatedUser.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Forbidden resource');
+    }
     await this.articleService.delete(id);
   }
 }
