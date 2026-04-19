@@ -2,14 +2,19 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { readAuthenticatedUser } from '../common/auth/auth-user.util';
+import { UserRole } from '../common/enums';
 import { COMMENT_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
 import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
 import { buildListResponse } from '../common/utils/list-response.util';
@@ -48,13 +53,33 @@ export class CommentController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateCommentDto) {
+  async create(@Req() request: Request, @Body() dto: CreateCommentDto) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    if (authenticatedUser.role === UserRole.VIEWER) {
+      throw new ForbiddenException('Forbidden resource');
+    }
+    if (
+      authenticatedUser.role === UserRole.EDITOR &&
+      dto.authorId !== authenticatedUser.userId
+    ) {
+      throw new ForbiddenException('Forbidden resource');
+    }
     return this.commentService.create(dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ParseUUIDPipe) id: string) {
+  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    if (authenticatedUser.role === UserRole.VIEWER) {
+      throw new ForbiddenException('Forbidden resource');
+    }
+    if (authenticatedUser.role === UserRole.EDITOR) {
+      const comment = await this.commentService.findById(id);
+      if (comment.authorId !== authenticatedUser.userId) {
+        throw new ForbiddenException('Forbidden resource');
+      }
+    }
     await this.commentService.delete(id);
   }
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -28,6 +29,14 @@ export class UserService {
     return this.excludePassword(user);
   }
 
+  async findRawByLogin(login: string): Promise<User | null> {
+    const row = await this.prisma.user.findUnique({ where: { login } });
+    if (!row) {
+      return null;
+    }
+    return mapUser(row);
+  }
+
   async findRaw(id: string): Promise<User> {
     const row = await this.prisma.user.findUnique({ where: { id } });
     if (!row) {
@@ -37,7 +46,11 @@ export class UserService {
   }
 
   async create(dto: CreateUserDto): Promise<Omit<User, 'password'>> {
-    const hashedPassword = await bcrypt.hash(dto.password, CRYPT_SALT);
+    const existingUser = await this.findRawByLogin(dto.login);
+    if (existingUser) {
+      throw new BadRequestException(`User with login ${dto.login} already exists`);
+    }
+    const hashedPassword = await this.hashPassword(dto.password);
     const row = await this.prisma.user.create({
       data: {
         login: dto.login,
@@ -48,16 +61,36 @@ export class UserService {
     return this.excludePassword(mapUser(row));
   }
 
+  async resetTestUserCredentials(
+    login: string,
+    password: string,
+    role: UserRole,
+  ): Promise<Omit<User, 'password'> | null> {
+    const existingUser = await this.findRawByLogin(login);
+    if (!existingUser) {
+      return null;
+    }
+    const hashedPassword = await this.hashPassword(password);
+    const row = await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        password: hashedPassword,
+        role: apiUserRoleToPrisma(role),
+      },
+    });
+    return this.excludePassword(mapUser(row));
+  }
+
   async update(
     id: string,
     dto: UpdatePasswordDto,
   ): Promise<Omit<User, 'password'>> {
     const user = await this.findRaw(id);
-    const isValid = await bcrypt.compare(dto.oldPassword, user.password);
+    const isValid = await this.comparePassword(dto.oldPassword, user.password);
     if (!isValid) {
       throw new ForbiddenException('Old password is incorrect');
     }
-    const hashedPassword = await bcrypt.hash(dto.newPassword, CRYPT_SALT);
+    const hashedPassword = await this.hashPassword(dto.newPassword);
     const row = await this.prisma.user.update({
       where: { id },
       data: { password: hashedPassword },
@@ -78,5 +111,13 @@ export class UserService {
   private excludePassword(user: User): Omit<User, 'password'> {
     const { id, login, role, createdAt, updatedAt } = user;
     return { id, login, role, createdAt, updatedAt };
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, CRYPT_SALT);
+  }
+
+  async comparePassword(rawPassword: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(rawPassword, hashedPassword);
   }
 }

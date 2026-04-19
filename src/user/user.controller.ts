@@ -9,8 +9,15 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  assertAdmin,
+  assertAdminOrSelf,
+  readAuthenticatedUser,
+} from '../common/auth/auth-user.util';
 import { USER_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
 import { ListQueryDto } from '../common/dto/list-query.dto';
 import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
@@ -49,21 +56,28 @@ export class UserController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateUserDto) {
+  async create(@Req() request: Request, @Body() dto: CreateUserDto) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    assertAdmin(authenticatedUser);
     return this.userService.create(dto);
   }
 
   @Put(':id')
   async update(
+    @Req() request: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePasswordDto,
   ) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    assertAdminOrSelf(authenticatedUser, id);
     return this.userService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ParseUUIDPipe) id: string) {
+  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    assertAdminOrSelf(authenticatedUser, id);
     await this.userService.delete(id);
   }
 }

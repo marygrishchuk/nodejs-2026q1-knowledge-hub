@@ -9,8 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { assertAdmin, readAuthenticatedUser } from '../common/auth/auth-user.util';
 import { CATEGORY_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
 import { ListQueryDto } from '../common/dto/list-query.dto';
 import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
@@ -49,21 +52,28 @@ export class CategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateCategoryDto) {
+  async create(@Req() request: Request, @Body() dto: CreateCategoryDto) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    assertAdmin(authenticatedUser);
     return this.categoryService.create(dto);
   }
 
   @Put(':id')
   async update(
+    @Req() request: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCategoryDto,
   ) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    assertAdmin(authenticatedUser);
     return this.categoryService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ParseUUIDPipe) id: string) {
+  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+    const authenticatedUser = readAuthenticatedUser(request);
+    assertAdmin(authenticatedUser);
     await this.categoryService.delete(id);
   }
 }
