@@ -20,7 +20,7 @@ const main = async () => {
     data: {
       login: 'seed_admin',
       password: await hashPassword('admin_pass'),
-      role: UserRole.ADMIN,
+      role: UserRole.admin,
     },
   });
 
@@ -28,7 +28,7 @@ const main = async () => {
     data: {
       login: 'seed_editor',
       password: await hashPassword('editor_pass'),
-      role: UserRole.EDITOR,
+      role: UserRole.editor,
     },
   });
 
@@ -57,7 +57,7 @@ const main = async () => {
     data: {
       title: 'Draft in Tech',
       content: 'Work in progress.',
-      status: ArticleStatus.DRAFT,
+      status: ArticleStatus.draft,
       authorId: admin.id,
       categoryId: catTech.id,
       tags: { connect: [tagByName('nestjs'), tagByName('typescript')] },
@@ -68,7 +68,7 @@ const main = async () => {
     data: {
       title: 'Published guide',
       content: 'Full Prisma guide.',
-      status: ArticleStatus.PUBLISHED,
+      status: ArticleStatus.published,
       authorId: editor.id,
       categoryId: catTech.id,
       tags: { connect: [tagByName('prisma'), tagByName('postgres')] },
@@ -79,7 +79,7 @@ const main = async () => {
     data: {
       title: 'Lifestyle tips',
       content: 'Daily habits.',
-      status: ArticleStatus.PUBLISHED,
+      status: ArticleStatus.published,
       authorId: editor.id,
       categoryId: catLife.id,
       tags: { connect: [tagByName('typescript')] },
@@ -90,7 +90,7 @@ const main = async () => {
     data: {
       title: 'Archived piece',
       content: 'Old news.',
-      status: ArticleStatus.ARCHIVED,
+      status: ArticleStatus.archived,
       authorId: admin.id,
       categoryId: catNews.id,
       tags: { connect: [tagByName('docker'), tagByName('nestjs')] },
@@ -101,7 +101,7 @@ const main = async () => {
     data: {
       title: 'Cross-topic',
       content: 'Multiple tags.',
-      status: ArticleStatus.DRAFT,
+      status: ArticleStatus.draft,
       authorId: null,
       categoryId: null,
       tags: {

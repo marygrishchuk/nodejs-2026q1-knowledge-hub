@@ -7,27 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ADMIN  @map("admin")
-  EDITOR @map("editor")
-  VIEWER @map("viewer")
-
-  @@map("user_role")
-}
-
-enum ArticleStatus {
-  DRAFT     @map("draft")
-  PUBLISHED @map("published")
-  ARCHIVED  @map("archived")
-
-  @@map("article_status")
-}
-
 model User {
   id        String    @id @default(uuid()) @db.Uuid
   login     String    @unique
   password  String
-  role      UserRole  @default(VIEWER)
+  role      UserRole  @default(viewer)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   articles  Article[]
@@ -45,18 +29,15 @@ model Article {
   id         String        @id @default(uuid()) @db.Uuid
   title      String
   content    String
-  status     ArticleStatus @default(DRAFT)
+  status     ArticleStatus @default(draft)
   authorId   String?       @db.Uuid
-  author     User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
   categoryId String?       @db.Uuid
-  category   Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+  author     User?         @relation(fields: [authorId], references: [id])
+  category   Category?     @relation(fields: [categoryId], references: [id])
   comments   Comment[]
-  tags       Tag[]
-
-  @@index([status])
-  @@index([categoryId])
+  tags       Tag[]         @relation("ArticleToTag")
 }
 
 model Comment {
@@ -64,13 +45,29 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
   articleId String   @db.Uuid
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   authorId  String?  @db.Uuid
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   author    User?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model Tag {
   id       String    @id @default(uuid()) @db.Uuid
   name     String    @unique
-  articles Article[]
+  articles Article[] @relation("ArticleToTag")
+}
+
+enum UserRole {
+  admin  @map("admin")
+  editor @map("editor")
+  viewer @map("viewer")
+
+  @@map("user_role")
+}
+
+enum ArticleStatus {
+  draft     @map("draft")
+  published @map("published")
+  archived  @map("archived")
+
+  @@map("article_status")
 }
