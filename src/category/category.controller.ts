@@ -30,9 +30,9 @@ export class CategoryController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
-  findAll(@Query() query: ListQueryDto) {
+  async findAll(@Query() query: ListQueryDto) {
     assertPaginationPair(query);
-    const items = this.categoryService.findAll();
+    const items = await this.categoryService.findAll();
     return buildListResponse(items, {
       sortBy: query.sortBy,
       order: query.order,
@@ -43,18 +43,18 @@ export class CategoryController {
   }
 
   @Get(':id')
-  findById(@Param('id', ParseUUIDPipe) id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.categoryService.findById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateCategoryDto) {
+  async create(@Body() dto: CreateCategoryDto) {
     return this.categoryService.create(dto);
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCategoryDto,
   ) {
@@ -63,7 +63,7 @@ export class CategoryController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id', ParseUUIDPipe) id: string) {
-    this.categoryService.delete(id);
+  async delete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.categoryService.delete(id);
   }
 }

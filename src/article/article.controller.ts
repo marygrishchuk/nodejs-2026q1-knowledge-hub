@@ -34,9 +34,9 @@ export class ArticleController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
-  findAll(@Query() query: ArticleListQueryDto) {
+  async findAll(@Query() query: ArticleListQueryDto) {
     assertPaginationPair(query);
-    const items = this.articleService.findAll(query);
+    const items = await this.articleService.findAll(query);
     return buildListResponse(items, {
       sortBy: query.sortBy,
       order: query.order,
@@ -47,18 +47,18 @@ export class ArticleController {
   }
 
   @Get(':id')
-  findById(@Param('id', ParseUUIDPipe) id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.articleService.findById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateArticleDto) {
+  async create(@Body() dto: CreateArticleDto) {
     return this.articleService.create(dto);
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateArticleDto,
   ) {
@@ -67,7 +67,7 @@ export class ArticleController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id', ParseUUIDPipe) id: string) {
-    this.articleService.delete(id);
+  async delete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.articleService.delete(id);
   }
 }

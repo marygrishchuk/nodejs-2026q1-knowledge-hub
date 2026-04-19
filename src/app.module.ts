@@ -5,10 +5,17 @@ import { CategoryModule } from './category/category.module';
 import { CommentModule } from './comment/comment.module';
 import { JsonApiAccessGuard } from './common/guards/json-api-access.guard';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [UserModule, CategoryModule, ArticleModule, CommentModule],
+  imports: [
+    PrismaModule,
+    UserModule,
+    CategoryModule,
+    ArticleModule,
+    CommentModule,
+  ],
   providers: [
     LoggingMiddleware,
     { provide: APP_GUARD, useClass: JsonApiAccessGuard },

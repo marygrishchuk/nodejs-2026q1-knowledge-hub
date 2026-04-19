@@ -4,10 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
-import { ArticleService } from '../article/article.service';
-import { CommentService } from '../comment/comment.service';
 import { UserRole } from '../common/enums';
+import { apiUserRoleToPrisma } from '../prisma/prisma-enums';
+import { mapUser } from '../prisma/prisma-mappers';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { User } from './interfaces/user.interface';
@@ -16,67 +16,63 @@ const CRYPT_SALT = parseInt(process.env.CRYPT_SALT ?? '10', 10);
 
 @Injectable()
 export class UserService {
-  private users: User[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(
-    private readonly articleService: ArticleService,
-    private readonly commentService: CommentService,
-  ) {}
-
-  findAll(): Omit<User, 'password'>[] {
-    return this.users.map(this.excludePassword);
+  async findAll(): Promise<Omit<User, 'password'>[]> {
+    const rows = await this.prisma.user.findMany();
+    return rows.map((row) => this.excludePassword(mapUser(row)));
   }
 
-  findById(id: string): Omit<User, 'password'> {
-    const user = this.findRaw(id);
+  async findById(id: string): Promise<Omit<User, 'password'>> {
+    const user = await this.findRaw(id);
     return this.excludePassword(user);
   }
 
-  findRaw(id: string): User {
-    const user = this.users.find((u) => u.id === id);
-    if (!user) {
+  async findRaw(id: string): Promise<User> {
+    const row = await this.prisma.user.findUnique({ where: { id } });
+    if (!row) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return user;
+    return mapUser(row);
   }
 
   async create(dto: CreateUserDto): Promise<Omit<User, 'password'>> {
-    const now = Date.now();
     const hashedPassword = await bcrypt.hash(dto.password, CRYPT_SALT);
-    const user: User = {
-      id: randomUUID(),
-      login: dto.login,
-      password: hashedPassword,
-      role: dto.role ?? UserRole.VIEWER,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.users.push(user);
-    return this.excludePassword(user);
+    const row = await this.prisma.user.create({
+      data: {
+        login: dto.login,
+        password: hashedPassword,
+        role: apiUserRoleToPrisma(dto.role ?? UserRole.VIEWER),
+      },
+    });
+    return this.excludePassword(mapUser(row));
   }
 
   async update(
     id: string,
     dto: UpdatePasswordDto,
   ): Promise<Omit<User, 'password'>> {
-    const user = this.findRaw(id);
+    const user = await this.findRaw(id);
     const isValid = await bcrypt.compare(dto.oldPassword, user.password);
     if (!isValid) {
       throw new ForbiddenException('Old password is incorrect');
     }
-    user.password = await bcrypt.hash(dto.newPassword, CRYPT_SALT);
-    user.updatedAt = Date.now();
-    return this.excludePassword(user);
+    const hashedPassword = await bcrypt.hash(dto.newPassword, CRYPT_SALT);
+    const row = await this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+    return this.excludePassword(mapUser(row));
   }
 
-  delete(id: string): void {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
-    this.articleService.nullifyAuthor(id);
-    this.commentService.deleteByAuthorId(id);
-    this.users.splice(index, 1);
+  async delete(id: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const row = await tx.user.findUnique({ where: { id } });
+      if (!row) {
+        throw new NotFoundException(`User with id ${id} not found`);
+      }
+      await tx.user.delete({ where: { id } });
+    });
   }
 
   private excludePassword(user: User): Omit<User, 'password'> {
