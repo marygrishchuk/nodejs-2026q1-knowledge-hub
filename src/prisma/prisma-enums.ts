@@ -9,13 +9,13 @@ export const apiUserRoleToPrisma = (
 ): PrismaUserRole => {
   switch (role) {
     case UserRole.ADMIN:
-      return PrismaUserRole.ADMIN;
+      return PrismaUserRole.admin;
     case UserRole.EDITOR:
-      return PrismaUserRole.EDITOR;
+      return PrismaUserRole.editor;
     case UserRole.VIEWER:
-      return PrismaUserRole.VIEWER;
+      return PrismaUserRole.viewer;
     default:
-      return PrismaUserRole.VIEWER;
+      return PrismaUserRole.viewer;
   }
 };
 
@@ -31,13 +31,13 @@ export const apiArticleStatusToPrisma = (
 ): PrismaArticleStatus => {
   switch (status) {
     case ArticleStatus.DRAFT:
-      return PrismaArticleStatus.DRAFT;
+      return PrismaArticleStatus.draft;
     case ArticleStatus.PUBLISHED:
-      return PrismaArticleStatus.PUBLISHED;
+      return PrismaArticleStatus.published;
     case ArticleStatus.ARCHIVED:
-      return PrismaArticleStatus.ARCHIVED;
+      return PrismaArticleStatus.archived;
     default:
-      return PrismaArticleStatus.DRAFT;
+      return PrismaArticleStatus.draft;
   }
 };
 
