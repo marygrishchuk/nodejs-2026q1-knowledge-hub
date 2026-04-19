@@ -26,7 +26,7 @@ export const AUTH_MESSAGES = {
 
 export const AUTH_RATE_LIMIT = {
   windowMs: 60_000,
-  maxRequests: 10_000,
+  maxRequests: 20,
   endpointSignup: 'signup',
   endpointLogin: 'login',
 } as const;

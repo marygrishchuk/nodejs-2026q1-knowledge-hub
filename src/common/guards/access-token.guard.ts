@@ -31,15 +31,21 @@ export class AccessTokenGuard implements CanActivate {
   }
 
   private verifyAccessToken(token: string): jwt.JwtPayload {
+    let decodedToken: string | jwt.JwtPayload;
     try {
-      const decodedToken = jwt.verify(token, this.authService.getAccessSecret());
-      if (typeof decodedToken === 'string') {
-        throw new UnauthorizedException('Invalid token payload');
+      decodedToken = jwt.verify(token, this.authService.getAccessSecret());
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new UnauthorizedException('Access token has expired');
       }
-      return decodedToken;
-    } catch {
-      throw new UnauthorizedException('Unauthorized');
+      throw new UnauthorizedException('Access token is invalid');
     }
+
+    if (typeof decodedToken === 'string') {
+      throw new UnauthorizedException('Invalid access token payload');
+    }
+
+    return decodedToken;
   }
 }
 
@@ -64,15 +70,15 @@ function isPublicPath(path: string): boolean {
 function readBearerToken(request: Request): string {
   const authorizationHeader = request.headers[AUTH_HEADER_NAME];
   if (!authorizationHeader || Array.isArray(authorizationHeader)) {
-    throw new UnauthorizedException('Unauthorized');
+    throw new UnauthorizedException('Authorization header is required');
   }
   if (!authorizationHeader.startsWith(BEARER_PREFIX)) {
-    throw new UnauthorizedException('Unauthorized');
+    throw new UnauthorizedException('Authorization header must use Bearer scheme');
   }
 
   const token = authorizationHeader.slice(BEARER_PREFIX.length).trim();
   if (token.length === 0) {
-    throw new UnauthorizedException('Unauthorized');
+    throw new UnauthorizedException('Bearer token is missing');
   }
   return token;
 }
