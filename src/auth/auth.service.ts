@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { UserRole } from '../common/enums';
@@ -14,6 +15,8 @@ import { AuthJwtPayload, AuthTokens } from './auth.types';
 
 @Injectable()
 export class AuthService {
+  private readonly invalidatedRefreshTokens: Record<string, true> = {};
+
   constructor(private readonly userService: UserService) {}
 
   async signup(dto: SignupDto): Promise<Omit<CreateUserDto, 'password'> & { id: string }> {
@@ -48,6 +51,27 @@ export class AuthService {
       login: user.login,
       role: user.role,
     });
+  }
+
+  refresh(refreshToken: string | undefined): AuthTokens {
+    if (!refreshToken) {
+      throw new UnauthorizedException(AUTH_MESSAGES.missingRefreshToken);
+    }
+    if (this.invalidatedRefreshTokens[refreshToken]) {
+      throw new ForbiddenException(AUTH_MESSAGES.invalidRefreshToken);
+    }
+
+    const payload = this.verifyRefreshToken(refreshToken);
+    const refreshedTokens = this.generateTokenPair(payload);
+    this.invalidatedRefreshTokens[refreshToken] = true;
+    return refreshedTokens;
+  }
+
+  logout(refreshToken: string | undefined): void {
+    if (!refreshToken) {
+      throw new UnauthorizedException(AUTH_MESSAGES.missingRefreshToken);
+    }
+    this.invalidatedRefreshTokens[refreshToken] = true;
   }
 
   getAccessSecret(): string {
@@ -88,6 +112,15 @@ export class AuthService {
       refreshToken: signToken(payload, this.getRefreshSecret(), this.getRefreshTtl()),
     };
   }
+
+  verifyRefreshToken(refreshToken: string): AuthJwtPayload {
+    try {
+      const decodedToken = jwt.verify(refreshToken, this.getRefreshSecret());
+      return extractPayload(decodedToken);
+    } catch {
+      throw new ForbiddenException(AUTH_MESSAGES.invalidRefreshToken);
+    }
+  }
 }
 
 function readEnvWithFallback(
@@ -116,4 +149,35 @@ function signToken(payload: AuthJwtPayload, secret: string, expiresIn: string): 
   } catch {
     throw new InternalServerErrorException('Failed to sign token');
   }
+}
+
+function extractPayload(decodedToken: string | jwt.JwtPayload): AuthJwtPayload {
+  if (typeof decodedToken === 'string') {
+    throw new ForbiddenException(AUTH_MESSAGES.invalidRefreshToken);
+  }
+
+  const userId = decodedToken.userId;
+  const login = decodedToken.login;
+  const role = decodedToken.role;
+  if (!isString(userId) || !isString(login) || !isRole(role)) {
+    throw new ForbiddenException(AUTH_MESSAGES.invalidRefreshToken);
+  }
+
+  return {
+    userId,
+    login,
+    role,
+  };
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function isRole(value: unknown): value is UserRole {
+  return (
+    value === UserRole.ADMIN ||
+    value === UserRole.EDITOR ||
+    value === UserRole.VIEWER
+  );
 }

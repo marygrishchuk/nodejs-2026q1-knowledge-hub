@@ -23,13 +23,14 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  refresh(@Body() dto: RefreshDto): RefreshDto {
-    return dto;
+  refresh(@Body() dto: RefreshDto) {
+    return this.authService.refresh(dto.refreshToken);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Body() dto: LogoutDto): LogoutDto {
-    return dto;
+  logout(@Body() dto: LogoutDto) {
+    this.authService.logout(dto.refreshToken);
+    return { status: 'ok' };
   }
 }
