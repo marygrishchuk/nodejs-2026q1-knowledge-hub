@@ -44,7 +44,7 @@ export class AuthService {
       if (!(error instanceof BadRequestException)) {
         throw error;
       }
-      if (!dto.login.startsWith('TEST_')) {
+      if (!isReusableTestSignupLogin(dto.login)) {
         throw error;
       }
 
@@ -242,4 +242,8 @@ function isRole(value: unknown): value is UserRole {
     value === UserRole.EDITOR ||
     value === UserRole.VIEWER
   );
+}
+
+function isReusableTestSignupLogin(login: string): boolean {
+  return process.env.TEST_MODE === 'auth' && login === 'TEST_AUTH_LOGIN';
 }
