@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { AUTH_RATE_LIMIT } from './auth.constants';
@@ -14,7 +21,10 @@ export class AuthController {
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   async signup(@Req() request: Request, @Body() dto: SignupDto) {
-    this.authService.assertRateLimit(request.ip, AUTH_RATE_LIMIT.endpointSignup);
+    this.authService.assertRateLimit(
+      request.ip,
+      AUTH_RATE_LIMIT.endpointSignup,
+    );
     return this.authService.signup(dto);
   }
 

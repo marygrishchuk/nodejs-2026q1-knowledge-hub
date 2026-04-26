@@ -77,7 +77,10 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+  async delete(
+    @Req() request: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const authenticatedUser = readAuthenticatedUser(request);
     assertNotViewer(authenticatedUser);
     assertAdminOrSelf(authenticatedUser, id);

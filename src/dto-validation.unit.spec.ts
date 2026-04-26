@@ -8,7 +8,10 @@ import { SignupDto } from './auth/dto/signup.dto';
 
 describe('DTO Validation — SignupDto', () => {
   it('passes for valid login and password', async () => {
-    const dto = Object.assign(new SignupDto(), { login: 'alice', password: 'pass123' });
+    const dto = Object.assign(new SignupDto(), {
+      login: 'alice',
+      password: 'pass123',
+    });
 
     const errors = await validate(dto);
 
@@ -40,7 +43,10 @@ describe('DTO Validation — SignupDto', () => {
   });
 
   it('fails when password is empty string', async () => {
-    const dto = Object.assign(new SignupDto(), { login: 'alice', password: '' });
+    const dto = Object.assign(new SignupDto(), {
+      login: 'alice',
+      password: '',
+    });
 
     const errors = await validate(dto);
 

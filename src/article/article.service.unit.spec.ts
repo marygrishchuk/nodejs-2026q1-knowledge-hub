@@ -187,7 +187,10 @@ describe('ArticleService', () => {
           data: expect.objectContaining({
             tags: {
               connectOrCreate: [
-                { where: { name: 'typescript' }, create: { name: 'typescript' } },
+                {
+                  where: { name: 'typescript' },
+                  create: { name: 'typescript' },
+                },
               ],
             },
           }),

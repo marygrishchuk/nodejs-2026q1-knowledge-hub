@@ -28,7 +28,9 @@ export class AuthService {
 
   constructor(private readonly userService: UserService) {}
 
-  async signup(dto: SignupDto): Promise<Omit<CreateUserDto, 'password'> & { id: string }> {
+  async signup(
+    dto: SignupDto,
+  ): Promise<Omit<CreateUserDto, 'password'> & { id: string }> {
     try {
       const createdUser = await this.userService.create({
         login: dto.login,
@@ -89,7 +91,10 @@ export class AuthService {
     if (!refreshToken) {
       throw new UnauthorizedException(AUTH_MESSAGES.missingRefreshToken);
     }
-    if (this.shouldUseTokenInvalidation() && this.invalidatedRefreshTokens[refreshToken]) {
+    if (
+      this.shouldUseTokenInvalidation() &&
+      this.invalidatedRefreshTokens[refreshToken]
+    ) {
       throw new ForbiddenException(AUTH_MESSAGES.invalidRefreshToken);
     }
 
@@ -125,7 +130,10 @@ export class AuthService {
 
     if (validAttempts.length >= AUTH_RATE_LIMIT.maxRequests) {
       this.rateLimitStore[key] = validAttempts;
-      throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException(
+        'Too many requests',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     validAttempts.push(nowTimestamp);
@@ -170,8 +178,16 @@ export class AuthService {
 
   generateTokenPair(payload: AuthJwtPayload): AuthTokens {
     return {
-      accessToken: signToken(payload, this.getAccessSecret(), this.getAccessTtl()),
-      refreshToken: signToken(payload, this.getRefreshSecret(), this.getRefreshTtl()),
+      accessToken: signToken(
+        payload,
+        this.getAccessSecret(),
+        this.getAccessTtl(),
+      ),
+      refreshToken: signToken(
+        payload,
+        this.getRefreshSecret(),
+        this.getRefreshTtl(),
+      ),
     };
   }
 
@@ -203,7 +219,11 @@ function readEnvWithFallback(
   return defaultValue;
 }
 
-function signToken(payload: AuthJwtPayload, secret: string, expiresIn: string): string {
+function signToken(
+  payload: AuthJwtPayload,
+  secret: string,
+  expiresIn: string,
+): string {
   try {
     return jwt.sign(payload, secret, {
       expiresIn: expiresIn as jwt.SignOptions['expiresIn'],

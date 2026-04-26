@@ -2,6 +2,45 @@
 
 A REST API for a Knowledge Hub platform built with NestJS. Manages users, articles, categories, and comments as described in the course assignment.
 
+## Code Reviewer: Quick Start
+
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Run the app
+
+Copy `.env.example` to `.env`, then:
+
+```bash
+npm run start:dev
+```
+
+The API is available at `http://localhost:4000`. Swagger UI is at `http://localhost:4000/doc`.
+
+### Run unit tests
+
+```bash
+# All unit tests
+npm run test
+
+# Unit tests only (same as test)
+npm run test:unit
+
+# Unit tests with coverage report (must meet ≥90% lines, ≥85% branches)
+npm run test:coverage
+```
+
+### Check lint errors
+
+```bash
+npm run lint
+```
+
+---
+
 ## Requirements
 
 - Node.js >= 24.10.0

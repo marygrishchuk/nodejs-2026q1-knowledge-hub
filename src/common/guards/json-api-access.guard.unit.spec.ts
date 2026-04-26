@@ -10,7 +10,11 @@ const makeContext = (
     accept?: string;
   } = {},
 ) => {
-  const { method = 'GET', path = '/article', accept = 'application/json' } = options;
+  const {
+    method = 'GET',
+    path = '/article',
+    accept = 'application/json',
+  } = options;
   return {
     switchToHttp: () => ({
       getRequest: () => ({

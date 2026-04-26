@@ -136,8 +136,14 @@ describe('AuthService', () => {
 
       const tokens = service.generateTokenPair(payload);
 
-      const decodedAccess = jwt.verify(tokens.accessToken, service.getAccessSecret()) as jwt.JwtPayload;
-      const decodedRefresh = jwt.verify(tokens.refreshToken, service.getRefreshSecret()) as jwt.JwtPayload;
+      const decodedAccess = jwt.verify(
+        tokens.accessToken,
+        service.getAccessSecret(),
+      ) as jwt.JwtPayload;
+      const decodedRefresh = jwt.verify(
+        tokens.refreshToken,
+        service.getRefreshSecret(),
+      ) as jwt.JwtPayload;
 
       expect(decodedAccess.userId).toBe('uuid-user-1');
       expect(decodedRefresh.login).toBe('alice');
@@ -236,7 +242,9 @@ describe('AuthService', () => {
     });
 
     it('throws ForbiddenException for an invalid refresh token', () => {
-      expect(() => service.refresh('invalid.token')).toThrow(ForbiddenException);
+      expect(() => service.refresh('invalid.token')).toThrow(
+        ForbiddenException,
+      );
     });
 
     it('invalidates used refresh token (rotation)', () => {
@@ -284,9 +292,7 @@ describe('AuthService', () => {
       const originalEnv = process.env.TEST_MODE;
       delete process.env.TEST_MODE;
 
-      expect(() =>
-        service.assertRateLimit('127.0.0.1', 'login'),
-      ).not.toThrow();
+      expect(() => service.assertRateLimit('127.0.0.1', 'login')).not.toThrow();
 
       process.env.TEST_MODE = originalEnv;
     });
@@ -311,9 +317,7 @@ describe('AuthService', () => {
       process.env.TEST_MODE = 'auth';
 
       for (let attempt = 0; attempt < 100; attempt++) {
-        expect(() =>
-          service.assertRateLimit('1.2.3.4', 'login'),
-        ).not.toThrow();
+        expect(() => service.assertRateLimit('1.2.3.4', 'login')).not.toThrow();
       }
 
       process.env.TEST_MODE = originalEnv;

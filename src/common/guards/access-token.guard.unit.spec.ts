@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../auth/auth.service';
 import { AccessTokenGuard } from './access-token.guard';
 
-const makeContext = (headers: Record<string, string> = {}, method = 'GET', path = '/article') =>
+const makeContext = (
+  headers: Record<string, string> = {},
+  method = 'GET',
+  path = '/article',
+) =>
   ({
     switchToHttp: () => ({
       getRequest: () => ({

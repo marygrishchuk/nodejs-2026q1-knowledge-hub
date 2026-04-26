@@ -36,7 +36,7 @@ async function bootstrap() {
   SwaggerModule.setup('doc', app, document);
 
   process.on('uncaughtException', (error: Error) => {
-    shutdownLogger.error(`uncaughtException: ${error.stack ?? error.message}`);
+    shutdownLogger.fatal(`uncaughtException: ${error.stack ?? error.message}`);
     gracefulShutdown(app, 'uncaughtException');
   });
 

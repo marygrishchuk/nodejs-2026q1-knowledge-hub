@@ -12,10 +12,14 @@ describe('assertPaginationPair', () => {
   });
 
   it('throws BadRequestException when only page is provided', () => {
-    expect(() => assertPaginationPair({ page: 1 })).toThrow(BadRequestException);
+    expect(() => assertPaginationPair({ page: 1 })).toThrow(
+      BadRequestException,
+    );
   });
 
   it('throws BadRequestException when only limit is provided', () => {
-    expect(() => assertPaginationPair({ limit: 10 })).toThrow(BadRequestException);
+    expect(() => assertPaginationPair({ limit: 10 })).toThrow(
+      BadRequestException,
+    );
   });
 });

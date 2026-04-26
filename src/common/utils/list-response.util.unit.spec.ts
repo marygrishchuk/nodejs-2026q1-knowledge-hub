@@ -15,7 +15,12 @@ const makeItems = (): Item[] => [
   { id: 'uuid-2', name: 'Bob', score: 20, createdAt: 2000 },
 ];
 
-const allowedSortKeys: readonly (keyof Item)[] = ['id', 'name', 'score', 'createdAt'];
+const allowedSortKeys: readonly (keyof Item)[] = [
+  'id',
+  'name',
+  'score',
+  'createdAt',
+];
 
 describe('buildListResponse', () => {
   it('returns all items in original order when no options provided', () => {
@@ -117,7 +122,12 @@ describe('buildListResponse', () => {
 
   it('handles items with null values in sort gracefully', () => {
     const itemsWithNull = [
-      { id: 'uuid-1', name: null as unknown as string, score: 10, createdAt: 1000 },
+      {
+        id: 'uuid-1',
+        name: null as unknown as string,
+        score: 10,
+        createdAt: 1000,
+      },
       { id: 'uuid-2', name: 'Bob', score: 20, createdAt: 2000 },
     ];
 
