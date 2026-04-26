@@ -1,7 +1,7 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 import { describe, expect, it } from 'vitest';
 import { UserRole } from '../enums';
+import { ForbiddenError, UnauthorizedError } from '../errors/custom-errors';
 import {
   assertAdmin,
   assertAdminOrSelf,
@@ -10,8 +10,7 @@ import {
   readAuthenticatedUser,
 } from './auth-user.util';
 
-const makeRequest = (user?: unknown) =>
-  ({ user } as unknown as Request);
+const makeRequest = (user?: unknown) => ({ user }) as unknown as Request;
 
 const makeAuthUser = (role: UserRole, userId = 'uuid-user-1') => ({
   userId,
@@ -33,36 +32,40 @@ describe('readAuthenticatedUser', () => {
     expect(result.role).toBe(UserRole.ADMIN);
   });
 
-  it('throws UnauthorizedException when user is absent from request', () => {
+  it('throws UnauthorizedError when user is absent from request', () => {
     const request = makeRequest(undefined);
 
-    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedException);
+    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedError);
   });
 
-  it('throws UnauthorizedException when userId is not a string', () => {
-    const request = makeRequest({ userId: 123, login: 'alice', role: UserRole.VIEWER });
+  it('throws UnauthorizedError when userId is not a string', () => {
+    const request = makeRequest({
+      userId: 123,
+      login: 'alice',
+      role: UserRole.VIEWER,
+    });
 
-    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedException);
+    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedError);
   });
 
-  it('throws UnauthorizedException when role is not a valid UserRole', () => {
+  it('throws UnauthorizedError when role is not a valid UserRole', () => {
     const request = makeRequest({
       userId: 'uuid-user-1',
       login: 'alice',
       role: 'superuser',
     });
 
-    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedException);
+    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedError);
   });
 
-  it('throws UnauthorizedException when login is not a string', () => {
+  it('throws UnauthorizedError when login is not a string', () => {
     const request = makeRequest({
       userId: 'uuid-user-1',
       login: 99,
       role: UserRole.VIEWER,
     });
 
-    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedException);
+    expect(() => readAuthenticatedUser(request)).toThrow(UnauthorizedError);
   });
 });
 
@@ -71,15 +74,15 @@ describe('assertAdmin', () => {
     expect(() => assertAdmin(makeAuthUser(UserRole.ADMIN))).not.toThrow();
   });
 
-  it('throws ForbiddenException when user has EDITOR role', () => {
+  it('throws ForbiddenError when user has EDITOR role', () => {
     expect(() => assertAdmin(makeAuthUser(UserRole.EDITOR))).toThrow(
-      ForbiddenException,
+      ForbiddenError,
     );
   });
 
-  it('throws ForbiddenException when user has VIEWER role', () => {
+  it('throws ForbiddenError when user has VIEWER role', () => {
     expect(() => assertAdmin(makeAuthUser(UserRole.VIEWER))).toThrow(
-      ForbiddenException,
+      ForbiddenError,
     );
   });
 });
@@ -93,29 +96,39 @@ describe('assertAdminOrSelf', () => {
 
   it('does not throw when user is accessing their own resource', () => {
     expect(() =>
-      assertAdminOrSelf(makeAuthUser(UserRole.VIEWER, 'uuid-user-1'), 'uuid-user-1'),
+      assertAdminOrSelf(
+        makeAuthUser(UserRole.VIEWER, 'uuid-user-1'),
+        'uuid-user-1',
+      ),
     ).not.toThrow();
   });
 
-  it('throws ForbiddenException when VIEWER tries to access another user resource', () => {
+  it('throws ForbiddenError when VIEWER tries to access another user resource', () => {
     expect(() =>
-      assertAdminOrSelf(makeAuthUser(UserRole.VIEWER, 'uuid-user-1'), 'uuid-other'),
-    ).toThrow(ForbiddenException);
+      assertAdminOrSelf(
+        makeAuthUser(UserRole.VIEWER, 'uuid-user-1'),
+        'uuid-other',
+      ),
+    ).toThrow(ForbiddenError);
   });
 });
 
 describe('assertEditorOrAdmin', () => {
   it('does not throw when user has EDITOR role', () => {
-    expect(() => assertEditorOrAdmin(makeAuthUser(UserRole.EDITOR))).not.toThrow();
+    expect(() =>
+      assertEditorOrAdmin(makeAuthUser(UserRole.EDITOR)),
+    ).not.toThrow();
   });
 
   it('does not throw when user has ADMIN role', () => {
-    expect(() => assertEditorOrAdmin(makeAuthUser(UserRole.ADMIN))).not.toThrow();
+    expect(() =>
+      assertEditorOrAdmin(makeAuthUser(UserRole.ADMIN)),
+    ).not.toThrow();
   });
 
-  it('throws ForbiddenException when user has VIEWER role', () => {
+  it('throws ForbiddenError when user has VIEWER role', () => {
     expect(() => assertEditorOrAdmin(makeAuthUser(UserRole.VIEWER))).toThrow(
-      ForbiddenException,
+      ForbiddenError,
     );
   });
 });
@@ -129,9 +142,9 @@ describe('assertNotViewer', () => {
     expect(() => assertNotViewer(makeAuthUser(UserRole.EDITOR))).not.toThrow();
   });
 
-  it('throws ForbiddenException when user has VIEWER role', () => {
+  it('throws ForbiddenError when user has VIEWER role', () => {
     expect(() => assertNotViewer(makeAuthUser(UserRole.VIEWER))).toThrow(
-      ForbiddenException,
+      ForbiddenError,
     );
   });
 });
