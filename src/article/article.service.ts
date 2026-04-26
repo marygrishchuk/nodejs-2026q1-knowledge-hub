@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { ArticleStatus } from '../common/enums';
 import { apiArticleStatusToPrisma } from '../prisma/prisma-enums';
@@ -62,7 +62,11 @@ export class ArticleService {
   }
 
   async update(id: string, dto: UpdateArticleDto): Promise<Article> {
-    await this.findById(id);
+    const current = await this.findById(id);
+
+    if (dto.status !== undefined) {
+      validateStatusTransition(current.status, dto.status);
+    }
 
     if (dto.tags) {
       const data: Prisma.ArticleUncheckedUpdateInput = {};
@@ -136,3 +140,23 @@ export class ArticleService {
     return where;
   }
 }
+
+const allowedTransitions: Record<ArticleStatus, ArticleStatus[]> = {
+  [ArticleStatus.DRAFT]: [ArticleStatus.PUBLISHED, ArticleStatus.ARCHIVED],
+  [ArticleStatus.PUBLISHED]: [ArticleStatus.ARCHIVED],
+  [ArticleStatus.ARCHIVED]: [],
+};
+
+const validateStatusTransition = (
+  currentStatus: ArticleStatus,
+  nextStatus: ArticleStatus,
+): void => {
+  if (currentStatus === nextStatus) {
+    return;
+  }
+  if (!allowedTransitions[currentStatus].includes(nextStatus)) {
+    throw new BadRequestException(
+      `Invalid status transition: ${currentStatus} → ${nextStatus}`,
+    );
+  }
+};
