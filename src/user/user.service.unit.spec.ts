@@ -269,6 +269,37 @@ describe('UserService', () => {
     });
   });
 
+  describe('resetTestUserCredentials', () => {
+    it('resets password and role for existing user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(makePrismaUser());
+      vi.mocked(bcrypt.hash).mockResolvedValue('$new-hash$' as never);
+      prismaMock.user.update.mockResolvedValue(
+        makePrismaUser({ password: '$new-hash$' }),
+      );
+
+      const result = await service.resetTestUserCredentials(
+        'alice',
+        'newpass',
+        UserRole.VIEWER,
+      );
+
+      expect(result).not.toBeNull();
+      expect(result).not.toHaveProperty('password');
+    });
+
+    it('returns null when login does not exist', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null);
+
+      const result = await service.resetTestUserCredentials(
+        'nobody',
+        'pass',
+        UserRole.VIEWER,
+      );
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('hashPassword', () => {
     it('delegates to bcrypt.hash with configured salt', async () => {
       vi.mocked(bcrypt.hash).mockResolvedValue('$bcrypt-hash$' as never);

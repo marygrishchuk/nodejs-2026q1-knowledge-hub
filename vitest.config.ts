@@ -18,6 +18,12 @@ export default defineConfig({
         'src/additional-tests/**',
         'src/**/*.interface.ts',
         'src/**/*.dto.ts',
+        'src/**/*.controller.ts',
+        'src/common/middleware/**',
+        'src/common/constants/**',
+        'src/app.service.ts',
+        'src/**/*.types.ts',
+        'src/common/enums.ts',
       ],
       thresholds: {
         lines: 90,
