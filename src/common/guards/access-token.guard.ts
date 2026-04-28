@@ -73,7 +73,9 @@ function readBearerToken(request: Request): string {
     throw new UnauthorizedException('Authorization header is required');
   }
   if (!authorizationHeader.startsWith(BEARER_PREFIX)) {
-    throw new UnauthorizedException('Authorization header must use Bearer scheme');
+    throw new UnauthorizedException(
+      'Authorization header must use Bearer scheme',
+    );
   }
 
   const token = authorizationHeader.slice(BEARER_PREFIX.length).trim();

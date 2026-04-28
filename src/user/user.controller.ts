@@ -16,6 +16,7 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   assertAdmin,
   assertAdminOrSelf,
+  assertNotViewer,
   readAuthenticatedUser,
 } from '../common/auth/auth-user.util';
 import { USER_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
@@ -69,14 +70,19 @@ export class UserController {
     @Body() dto: UpdatePasswordDto,
   ) {
     const authenticatedUser = readAuthenticatedUser(request);
+    assertNotViewer(authenticatedUser);
     assertAdminOrSelf(authenticatedUser, id);
     return this.userService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+  async delete(
+    @Req() request: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const authenticatedUser = readAuthenticatedUser(request);
+    assertNotViewer(authenticatedUser);
     assertAdminOrSelf(authenticatedUser, id);
     await this.userService.delete(id);
   }

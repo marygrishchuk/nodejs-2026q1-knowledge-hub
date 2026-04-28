@@ -13,7 +13,10 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
-import { assertAdmin, readAuthenticatedUser } from '../common/auth/auth-user.util';
+import {
+  assertAdmin,
+  readAuthenticatedUser,
+} from '../common/auth/auth-user.util';
 import { CATEGORY_LIST_SORT_FIELDS } from '../common/constants/list-sort-fields.constant';
 import { ListQueryDto } from '../common/dto/list-query.dto';
 import { assertPaginationPair } from '../common/utils/assert-pagination-pair.util';
@@ -71,7 +74,10 @@ export class CategoryController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+  async delete(
+    @Req() request: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const authenticatedUser = readAuthenticatedUser(request);
     assertAdmin(authenticatedUser);
     await this.categoryService.delete(id);

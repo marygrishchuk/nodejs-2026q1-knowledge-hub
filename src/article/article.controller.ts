@@ -96,7 +96,10 @@ export class ArticleController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Req() request: Request, @Param('id', ParseUUIDPipe) id: string) {
+  async delete(
+    @Req() request: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const authenticatedUser = readAuthenticatedUser(request);
     if (authenticatedUser.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Forbidden resource');
