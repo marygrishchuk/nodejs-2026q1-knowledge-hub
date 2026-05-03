@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ArticleService } from '../article/article.service';
 import { AiCacheService } from './cache/ai-cache.service';
+import { AnalyzeArticleDto } from './dto/analyze-article.dto';
 import { SummarizeArticleDto } from './dto/summarize-article.dto';
 import { TranslateArticleDto } from './dto/translate-article.dto';
 import { GeminiService } from './gemini/gemini.service';
 import {
+  AnalyzeArticleResponse,
   SummarizeArticleResponse,
   TranslateArticleResponse,
 } from './interfaces/ai-responses.interface';
+import { buildAnalyzePrompt } from './prompts/analyze.prompt';
 import { buildSummarizePrompt } from './prompts/summarize.prompt';
 import { buildTranslatePrompt } from './prompts/translate.prompt';
 import { AiUsageService } from './tracking/ai-usage.service';
@@ -121,6 +124,45 @@ export class AiService {
 
     this.cacheService.set(cacheKey, result);
     this.usageService.trackLatency('translate', Date.now() - startTime);
+
+    return result;
+  }
+
+  async analyzeArticle(
+    articleId: string,
+    dto: AnalyzeArticleDto,
+  ): Promise<AnalyzeArticleResponse> {
+    const startTime = Date.now();
+    this.usageService.trackRequest('analyze');
+
+    const article = await this.articleService.findById(articleId);
+
+    const prompt = buildAnalyzePrompt(
+      article.title,
+      article.content,
+      dto.task,
+    );
+
+    const response = await this.geminiService.generateContent(prompt, {
+      jsonMode: true,
+    });
+    const jsonText = this.geminiService.extractText(response);
+
+    const usageMetadata = this.geminiService.getUsageMetadata(response);
+    if (usageMetadata?.totalTokenCount) {
+      this.usageService.trackTokens(usageMetadata.totalTokenCount);
+    }
+
+    const parsed = JSON.parse(jsonText);
+
+    const result: AnalyzeArticleResponse = {
+      articleId,
+      analysis: parsed.analysis,
+      suggestions: parsed.suggestions,
+      severity: parsed.severity,
+    };
+
+    this.usageService.trackLatency('analyze', Date.now() - startTime);
 
     return result;
   }
