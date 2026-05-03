@@ -76,6 +76,52 @@ Keep a **single** `DATABASE_URL` entry in `.env`. If you run `prisma init` again
 | `JWT_SECRET_REFRESH_KEY` | Secret for refresh tokens |
 | `TOKEN_EXPIRE_TIME` | Access token lifetime |
 | `TOKEN_REFRESH_EXPIRE_TIME` | Refresh token lifetime |
+| `GEMINI_API_KEY` | Google Gemini API key (required for AI endpoints) |
+| `GEMINI_API_BASE_URL` | Gemini API base URL (default: `https://generativelanguage.googleapis.com`) |
+| `GEMINI_MODEL` | Gemini model to use (default: `gemini-2.0-flash`) |
+| `AI_RATE_LIMIT_RPM` | Rate limit for AI endpoints (requests per minute, default: 20) |
+| `AI_CACHE_TTL_SEC` | Cache TTL for AI responses (seconds, default: 300) |
+
+## Google Gemini API Setup
+
+The AI-powered features require a Google Gemini API key.
+
+### How to obtain a Gemini API key
+
+1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Get API key" or "Create API key"
+4. Choose "Create API key in new project" or select an existing project
+5. Copy the generated API key
+
+### Configure the API key
+
+1. Open your `.env` file
+2. Find the line `GEMINI_API_KEY=your-gemini-api-key`
+3. Replace `your-gemini-api-key` with your actual API key:
+   ```
+   GEMINI_API_KEY=AIzaSyD...your-actual-key-here...
+   ```
+4. Save the file and restart the application
+
+### Model used
+
+This application uses the **`gemini-2.0-flash`** model by default. This model is part of Google's free tier and provides:
+
+- Fast response times
+- Good quality for summarization, translation, and analysis tasks
+- Support for structured JSON output
+- Generous free quota (60 requests per minute for free tier)
+
+You can change the model by updating `GEMINI_MODEL` in your `.env` file.
+
+### Known limitations
+
+- **Free tier quotas**: The free tier has a limit of 60 requests per minute (RPM) and 1,500 requests per day (RPD)
+- **Rate limiting**: The application implements client-side rate limiting (default: 20 RPM) to stay within free tier limits
+- **Latency**: AI responses typically take 1-3 seconds depending on content size and complexity
+- **Regional availability**: Gemini API may have different availability or quotas depending on your region
+- **Content length**: Very large articles may hit token limits; consider summarizing before analyzing
 
 ## Running the application
 
@@ -207,6 +253,172 @@ Allowed `sortBy` values per list endpoint:
 - `GET /comment/:id` — get comment by id
 - `POST /comment` — create comment
 - `DELETE /comment/:id` — delete comment
+
+### AI Endpoints (`/ai`)
+
+The Knowledge Hub provides AI-powered features using Google Gemini API. All AI endpoints are rate-limited (default: 20 requests per minute per IP).
+
+#### Summarize Article
+
+**`POST /ai/articles/:articleId/summarize`**
+
+Generates a summary of an existing article.
+
+Request body:
+```json
+{
+  "maxLength": "medium"
+}
+```
+
+- `maxLength` (optional): `"short"`, `"medium"`, or `"detailed"` (default: `"medium"`)
+
+Response (200):
+```json
+{
+  "articleId": "uuid",
+  "summary": "Generated summary text...",
+  "originalLength": 1500,
+  "summaryLength": 250
+}
+```
+
+Responses: `200` (success), `404` (article not found), `429` (rate limit exceeded), `503` (AI service unavailable)
+
+#### Translate Article
+
+**`POST /ai/articles/:articleId/translate`**
+
+Translates article content to a target language.
+
+Request body:
+```json
+{
+  "targetLanguage": "Spanish",
+  "sourceLanguage": "English"
+}
+```
+
+- `targetLanguage` (required): Target language name (e.g., "Spanish", "French", "German")
+- `sourceLanguage` (optional): Source language, or leave empty for auto-detection
+
+Response (200):
+```json
+{
+  "articleId": "uuid",
+  "translatedText": "Translated content...",
+  "detectedLanguage": "English"
+}
+```
+
+Responses: `200` (success), `400` (missing targetLanguage), `404` (article not found), `429` (rate limit), `503` (unavailable)
+
+#### Analyze Article
+
+**`POST /ai/articles/:articleId/analyze`**
+
+Analyzes article content and provides insights.
+
+Request body:
+```json
+{
+  "task": "review"
+}
+```
+
+- `task` (optional): `"review"`, `"bugs"`, `"optimize"`, or `"explain"` (default: `"review"`)
+
+Response (200):
+```json
+{
+  "articleId": "uuid",
+  "analysis": "Detailed analysis of the article...",
+  "suggestions": [
+    "Add more examples",
+    "Improve code formatting",
+    "Include error handling section"
+  ],
+  "severity": "info"
+}
+```
+
+- `severity`: `"info"`, `"warning"`, or `"error"`
+
+Responses: `200` (success), `404` (article not found), `429` (rate limit), `503` (unavailable)
+
+#### Generate (Generic AI)
+
+**`POST /ai/generate`**
+
+Generic AI endpoint for free-form generation with optional conversation context.
+
+Request body:
+```json
+{
+  "prompt": "Explain dependency injection in NestJS",
+  "sessionId": "optional-session-uuid"
+}
+```
+
+- `prompt` (required): Your question or request
+- `sessionId` (optional): Session ID for conversation continuity (returned in previous responses)
+
+Response (200):
+```json
+{
+  "response": "Generated response...",
+  "sessionId": "session-uuid"
+}
+```
+
+Save the `sessionId` and include it in subsequent requests to maintain conversation context (last 10 messages, 1-hour TTL).
+
+Responses: `200` (success), `400` (missing prompt), `429` (rate limit), `503` (unavailable)
+
+#### Usage Statistics
+
+**`GET /ai/usage`**
+
+Returns AI usage statistics since server startup.
+
+Response (200):
+```json
+{
+  "totalRequests": 150,
+  "byEndpoint": {
+    "summarize": 45,
+    "translate": 30,
+    "analyze": 25,
+    "generate": 50
+  },
+  "totalTokens": 125000,
+  "cacheHits": 20,
+  "cacheMisses": 130
+}
+```
+
+#### Diagnostics
+
+**`GET /ai/diagnostics`**
+
+Returns detailed AI service diagnostics including latency metrics.
+
+Response (200):
+```json
+{
+  "uptime": 3600000,
+  "usage": { /* same as /ai/usage */ },
+  "latency": {
+    "p50": 1200,
+    "p95": 2500,
+    "average": 1450
+  },
+  "cacheHitRatio": 0.15
+}
+```
+
+- Latency values are in milliseconds
+- `cacheHitRatio` is between 0 and 1 (0.15 = 15% cache hit rate)
 
 ## Testing
 
