@@ -14,6 +14,7 @@ import { buildAnalyzePrompt } from './prompts/analyze.prompt';
 import { buildSummarizePrompt } from './prompts/summarize.prompt';
 import { buildTranslatePrompt } from './prompts/translate.prompt';
 import { AiUsageService } from './tracking/ai-usage.service';
+import { AiOutputValidator } from './validators/ai-output.validator';
 
 @Injectable()
 export class AiService {
@@ -22,6 +23,7 @@ export class AiService {
     private readonly geminiService: GeminiService,
     private readonly cacheService: AiCacheService,
     private readonly usageService: AiUsageService,
+    private readonly outputValidator: AiOutputValidator,
   ) {}
 
   async summarizeArticle(
@@ -153,13 +155,13 @@ export class AiService {
       this.usageService.trackTokens(usageMetadata.totalTokenCount);
     }
 
-    const parsed = JSON.parse(jsonText);
+    const validated = this.outputValidator.validateAnalyzeOutput(jsonText);
 
     const result: AnalyzeArticleResponse = {
       articleId,
-      analysis: parsed.analysis,
-      suggestions: parsed.suggestions,
-      severity: parsed.severity,
+      analysis: validated.analysis,
+      suggestions: validated.suggestions,
+      severity: validated.severity,
     };
 
     this.usageService.trackLatency('analyze', Date.now() - startTime);

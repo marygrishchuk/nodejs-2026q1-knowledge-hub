@@ -6,6 +6,7 @@ import { AiCacheService } from './cache/ai-cache.service';
 import { GeminiService } from './gemini/gemini.service';
 import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
 import { AiUsageService } from './tracking/ai-usage.service';
+import { AiOutputValidator } from './validators/ai-output.validator';
 
 @Module({
   imports: [ArticleModule],
@@ -16,6 +17,7 @@ import { AiUsageService } from './tracking/ai-usage.service';
     AiCacheService,
     AiUsageService,
     AiRateLimitGuard,
+    AiOutputValidator,
   ],
   exports: [AiService],
 })
