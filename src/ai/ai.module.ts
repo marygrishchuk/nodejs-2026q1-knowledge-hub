@@ -5,6 +5,7 @@ import { AiService } from './ai.service';
 import { AiCacheService } from './cache/ai-cache.service';
 import { GeminiService } from './gemini/gemini.service';
 import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
+import { AiSessionService } from './session/ai-session.service';
 import { AiUsageService } from './tracking/ai-usage.service';
 import { AiOutputValidator } from './validators/ai-output.validator';
 
@@ -18,6 +19,7 @@ import { AiOutputValidator } from './validators/ai-output.validator';
     AiUsageService,
     AiRateLimitGuard,
     AiOutputValidator,
+    AiSessionService,
   ],
   exports: [AiService],
 })

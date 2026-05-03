@@ -2,17 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { ArticleService } from '../article/article.service';
 import { AiCacheService } from './cache/ai-cache.service';
 import { AnalyzeArticleDto } from './dto/analyze-article.dto';
+import { GenerateDto } from './dto/generate.dto';
 import { SummarizeArticleDto } from './dto/summarize-article.dto';
 import { TranslateArticleDto } from './dto/translate-article.dto';
 import { GeminiService } from './gemini/gemini.service';
 import {
   AnalyzeArticleResponse,
+  GenerateResponse,
   SummarizeArticleResponse,
   TranslateArticleResponse,
 } from './interfaces/ai-responses.interface';
 import { buildAnalyzePrompt } from './prompts/analyze.prompt';
+import { buildGeneratePrompt } from './prompts/generate.prompt';
 import { buildSummarizePrompt } from './prompts/summarize.prompt';
 import { buildTranslatePrompt } from './prompts/translate.prompt';
+import { AiSessionService } from './session/ai-session.service';
 import { AiUsageService } from './tracking/ai-usage.service';
 import { AiOutputValidator } from './validators/ai-output.validator';
 
@@ -24,6 +28,7 @@ export class AiService {
     private readonly cacheService: AiCacheService,
     private readonly usageService: AiUsageService,
     private readonly outputValidator: AiOutputValidator,
+    private readonly sessionService: AiSessionService,
   ) {}
 
   async summarizeArticle(
@@ -167,6 +172,44 @@ export class AiService {
     this.usageService.trackLatency('analyze', Date.now() - startTime);
 
     return result;
+  }
+
+  async generate(dto: GenerateDto): Promise<GenerateResponse> {
+    const startTime = Date.now();
+    this.usageService.trackRequest('generate');
+
+    let sessionId = dto.sessionId;
+    let history: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+    if (sessionId) {
+      if (!this.sessionService.sessionExists(sessionId)) {
+        sessionId = this.sessionService.createSession();
+      }
+      history = this.sessionService.getHistory(sessionId);
+    } else {
+      sessionId = this.sessionService.createSession();
+    }
+
+    this.sessionService.addMessage(sessionId, 'user', dto.prompt);
+
+    const prompt = buildGeneratePrompt(dto.prompt, history);
+
+    const response = await this.geminiService.generateContent(prompt);
+    const generatedText = this.geminiService.extractText(response);
+
+    const usageMetadata = this.geminiService.getUsageMetadata(response);
+    if (usageMetadata?.totalTokenCount) {
+      this.usageService.trackTokens(usageMetadata.totalTokenCount);
+    }
+
+    this.sessionService.addMessage(sessionId, 'assistant', generatedText);
+
+    this.usageService.trackLatency('generate', Date.now() - startTime);
+
+    return {
+      response: generatedText,
+      sessionId,
+    };
   }
 }
 
