@@ -4,12 +4,19 @@ import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AiCacheService } from './cache/ai-cache.service';
 import { GeminiService } from './gemini/gemini.service';
+import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
 import { AiUsageService } from './tracking/ai-usage.service';
 
 @Module({
   imports: [ArticleModule],
   controllers: [AiController],
-  providers: [AiService, GeminiService, AiCacheService, AiUsageService],
+  providers: [
+    AiService,
+    GeminiService,
+    AiCacheService,
+    AiUsageService,
+    AiRateLimitGuard,
+  ],
   exports: [AiService],
 })
 export class AiModule {}
