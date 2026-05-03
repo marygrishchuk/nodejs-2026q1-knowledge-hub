@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DiagnosticsResponse, UsageStats } from '../interfaces/ai-responses.interface';
+import {
+  DiagnosticsResponse,
+  UsageStats,
+} from '../interfaces/ai-responses.interface';
 
 interface LatencyRecord {
   timestamp: number;
@@ -22,7 +25,9 @@ export class AiUsageService {
   private latencyRecords: LatencyRecord[] = [];
   private startTime = Date.now();
 
-  trackRequest(endpoint: 'summarize' | 'translate' | 'analyze' | 'generate'): void {
+  trackRequest(
+    endpoint: 'summarize' | 'translate' | 'analyze' | 'generate',
+  ): void {
     this.totalRequests++;
     this.endpointCounters[endpoint]++;
   }

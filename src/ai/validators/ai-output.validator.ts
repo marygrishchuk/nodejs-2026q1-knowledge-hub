@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 interface AnalyzeOutput {
   analysis: string;
@@ -59,13 +59,16 @@ export class AiOutputValidator {
     );
   }
 
-  private isValidSeverity(severity: any): severity is 'info' | 'warning' | 'error' {
+  private isValidSeverity(
+    severity: any,
+  ): severity is 'info' | 'warning' | 'error' {
     return ['info', 'warning', 'error'].includes(severity);
   }
 
   private getFallbackAnalyzeOutput(): AnalyzeOutput {
     return {
-      analysis: 'Analysis could not be completed due to an unexpected response format.',
+      analysis:
+        'Analysis could not be completed due to an unexpected response format.',
       suggestions: [
         'Please try again later',
         'Consider reviewing the article manually',

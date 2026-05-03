@@ -144,11 +144,7 @@ export class AiService {
 
     const article = await this.articleService.findById(articleId);
 
-    const prompt = buildAnalyzePrompt(
-      article.title,
-      article.content,
-      dto.task,
-    );
+    const prompt = buildAnalyzePrompt(article.title, article.content, dto.task);
 
     const response = await this.geminiService.generateContent(prompt, {
       jsonMode: true,
@@ -212,4 +208,3 @@ export class AiService {
     };
   }
 }
-

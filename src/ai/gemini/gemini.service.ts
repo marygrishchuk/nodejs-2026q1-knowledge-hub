@@ -18,7 +18,7 @@ export class GeminiService {
     this.baseUrl =
       process.env.GEMINI_API_BASE_URL ||
       'https://generativelanguage.googleapis.com';
-    this.model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    this.model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
     if (!this.apiKey) {
       throw new Error('GEMINI_API_KEY is not configured');
@@ -78,10 +78,7 @@ export class GeminiService {
         );
       }
 
-      const errorText = await response.text();
-      throw new InternalServerErrorException(
-        `Gemini API error: ${statusCode}`,
-      );
+      throw new InternalServerErrorException(`Gemini API error: ${statusCode}`);
     } catch (error) {
       if (
         error instanceof ServiceUnavailableException ||
@@ -96,9 +93,7 @@ export class GeminiService {
         return this.callWithRetry(request, attempt + 1);
       }
 
-      throw new ServiceUnavailableException(
-        'Failed to connect to AI service',
-      );
+      throw new ServiceUnavailableException('Failed to connect to AI service');
     }
   }
 

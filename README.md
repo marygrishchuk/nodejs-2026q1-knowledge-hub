@@ -78,7 +78,7 @@ Keep a **single** `DATABASE_URL` entry in `.env`. If you run `prisma init` again
 | `TOKEN_REFRESH_EXPIRE_TIME` | Refresh token lifetime |
 | `GEMINI_API_KEY` | Google Gemini API key (required for AI endpoints) |
 | `GEMINI_API_BASE_URL` | Gemini API base URL (default: `https://generativelanguage.googleapis.com`) |
-| `GEMINI_MODEL` | Gemini model to use (default: `gemini-2.0-flash`) |
+| `GEMINI_MODEL` | Gemini model to use (default: `gemini-2.5-flash`) |
 | `AI_RATE_LIMIT_RPM` | Rate limit for AI endpoints (requests per minute, default: 20) |
 | `AI_CACHE_TTL_SEC` | Cache TTL for AI responses (seconds, default: 300) |
 
@@ -106,7 +106,7 @@ The AI-powered features require a Google Gemini API key.
 
 ### Model used
 
-This application uses the **`gemini-2.0-flash`** model by default. This model is part of Google's free tier and provides:
+This application uses the **`gemini-2.5-flash`** model by default. This model is part of Google's Flash lineup and typically provides:
 
 - Fast response times
 - Good quality for summarization, translation, and analysis tasks

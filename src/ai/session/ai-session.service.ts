@@ -58,7 +58,9 @@ export class AiSessionService {
     session.lastAccessedAt = Date.now();
   }
 
-  getHistory(sessionId: string): Array<{ role: 'user' | 'assistant'; content: string }> {
+  getHistory(
+    sessionId: string,
+  ): Array<{ role: 'user' | 'assistant'; content: string }> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       return [];

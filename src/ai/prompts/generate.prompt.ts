@@ -11,7 +11,9 @@ Provide a helpful, accurate, and concise response.`;
   }
 
   const historyText = conversationHistory
-    .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+    .map(
+      (msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`,
+    )
     .join('\n\n');
 
   return `You are a helpful AI assistant for a knowledge management system. Here is the conversation history:

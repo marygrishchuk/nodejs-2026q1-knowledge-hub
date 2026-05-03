@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AiService } from './ai.service';
 import { AnalyzeArticleDto } from './dto/analyze-article.dto';
 import { GenerateDto } from './dto/generate.dto';
@@ -24,6 +33,7 @@ export class AiController {
   ) {}
 
   @Post('articles/:articleId/summarize')
+  @HttpCode(HttpStatus.OK)
   async summarizeArticle(
     @Param('articleId') articleId: string,
     @Body() dto: SummarizeArticleDto,
@@ -32,6 +42,7 @@ export class AiController {
   }
 
   @Post('articles/:articleId/translate')
+  @HttpCode(HttpStatus.OK)
   async translateArticle(
     @Param('articleId') articleId: string,
     @Body() dto: TranslateArticleDto,
@@ -40,6 +51,7 @@ export class AiController {
   }
 
   @Post('articles/:articleId/analyze')
+  @HttpCode(HttpStatus.OK)
   async analyzeArticle(
     @Param('articleId') articleId: string,
     @Body() dto: AnalyzeArticleDto,
@@ -48,6 +60,7 @@ export class AiController {
   }
 
   @Post('generate')
+  @HttpCode(HttpStatus.OK)
   async generate(@Body() dto: GenerateDto): Promise<GenerateResponse> {
     return this.aiService.generate(dto);
   }
