@@ -1,8 +1,12 @@
 import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { SummarizeArticleDto } from './dto/summarize-article.dto';
+import { TranslateArticleDto } from './dto/translate-article.dto';
 import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
-import { SummarizeArticleResponse } from './interfaces/ai-responses.interface';
+import {
+  SummarizeArticleResponse,
+  TranslateArticleResponse,
+} from './interfaces/ai-responses.interface';
 
 @Controller('ai')
 @UseGuards(AiRateLimitGuard)
@@ -15,5 +19,13 @@ export class AiController {
     @Body() dto: SummarizeArticleDto,
   ): Promise<SummarizeArticleResponse> {
     return this.aiService.summarizeArticle(articleId, dto);
+  }
+
+  @Post('articles/:articleId/translate')
+  async translateArticle(
+    @Param('articleId') articleId: string,
+    @Body() dto: TranslateArticleDto,
+  ): Promise<TranslateArticleResponse> {
+    return this.aiService.translateArticle(articleId, dto);
   }
 }
