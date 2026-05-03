@@ -7,15 +7,21 @@ import { TranslateArticleDto } from './dto/translate-article.dto';
 import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
 import {
   AnalyzeArticleResponse,
+  DiagnosticsResponse,
   GenerateResponse,
   SummarizeArticleResponse,
   TranslateArticleResponse,
+  UsageStats,
 } from './interfaces/ai-responses.interface';
+import { AiUsageService } from './tracking/ai-usage.service';
 
 @Controller('ai')
 @UseGuards(AiRateLimitGuard)
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly aiService: AiService,
+    private readonly usageService: AiUsageService,
+  ) {}
 
   @Post('articles/:articleId/summarize')
   async summarizeArticle(
@@ -44,5 +50,15 @@ export class AiController {
   @Post('generate')
   async generate(@Body() dto: GenerateDto): Promise<GenerateResponse> {
     return this.aiService.generate(dto);
+  }
+
+  @Get('usage')
+  async getUsage(): Promise<UsageStats> {
+    return this.usageService.getUsageStats();
+  }
+
+  @Get('diagnostics')
+  async getDiagnostics(): Promise<DiagnosticsResponse> {
+    return this.usageService.getDiagnostics();
   }
 }
