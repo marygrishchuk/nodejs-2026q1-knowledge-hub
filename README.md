@@ -4,21 +4,56 @@ A REST API for a Knowledge Hub platform built with NestJS. Manages users, articl
 
 ## Code Reviewer: Quick Start
 
+You need **Node.js ≥ 24.10.0** (see `package.json` `engines`), **PostgreSQL**, and a copied `.env`.
+
 ### Install dependencies
 
 ```bash
 npm install
 ```
 
-### Run the app
+### Run the app (host Node + Postgres in Docker)
 
-Copy `.env.example` to `.env`, then:
+This is the path least likely to surprise reviewers: keep **`DATABASE_URL`** in `.env` pointed at **`localhost`** (as in `.env.example`), run only the database container, apply migrations from your machine, then start Nest.
 
-```bash
-npm run start:dev
-```
+1. Copy env and edit if needed:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Keep **`GEMINI_API_KEY`** non-empty (the example placeholder is enough for the server to boot; put a real key only if you exercise **`/ai`** routes).
+
+2. Start PostgreSQL:
+
+   ```bash
+   docker compose up -d db
+   ```
+
+   If port **5432** is already taken, stop the other Postgres instance or remap the `db` ports in `docker-compose.yml` and use the same port in **`DATABASE_URL`**.
+
+3. Generate the Prisma client and apply migrations (creates tables):
+
+   ```bash
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+   Optional sample data:
+
+   ```bash
+   npx prisma db seed
+   ```
+
+4. Start the API:
+
+   ```bash
+   npm run start:dev
+   ```
 
 The API is available at `http://localhost:4000`. Swagger UI is at `http://localhost:4000/doc`.
+
+**Alternative:** `docker compose up --build` starts API + Postgres together; you still must run **`npx prisma migrate deploy`** (and optionally **`db seed`**) **from the host** once, against **`localhost`**, before the API can use the schema—the production image does not ship the Prisma CLI for `exec` migrations inside the container.
 
 ### Run unit tests
 
