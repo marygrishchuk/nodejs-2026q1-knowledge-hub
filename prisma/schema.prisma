@@ -56,6 +56,13 @@ model Tag {
   articles Article[] @relation("ArticleToTag")
 }
 
+model RagIndexRecord {
+  articleId   String   @id @db.Uuid
+  indexedAt   DateTime
+
+  @@map("rag_index_record")
+}
+
 enum UserRole {
   admin  @map("admin")
   editor @map("editor")
