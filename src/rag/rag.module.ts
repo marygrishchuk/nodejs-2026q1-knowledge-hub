@@ -4,6 +4,7 @@ import { ChunkerService } from './chunker/chunker.service';
 import { EmbeddingService } from './embedding/embedding.service';
 import { IndexerService } from './indexer/indexer.service';
 import { RagController } from './rag.controller';
+import { RagSearchService } from './search/rag-search.service';
 import { VectorStoreService } from './vector-store/vector-store.service';
 
 @Module({
@@ -14,6 +15,7 @@ import { VectorStoreService } from './vector-store/vector-store.service';
     EmbeddingService,
     VectorStoreService,
     IndexerService,
+    RagSearchService,
   ],
   exports: [EmbeddingService, VectorStoreService],
 })
