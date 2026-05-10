@@ -23,8 +23,7 @@ export class VectorStoreService implements OnModuleInit {
   private readonly collection: string;
 
   constructor() {
-    this.baseUrl =
-      process.env.RAG_VECTOR_DB_URL ?? 'http://vectordb:6333';
+    this.baseUrl = process.env.RAG_VECTOR_DB_URL ?? 'http://vectordb:6333';
     this.collection =
       process.env.RAG_VECTOR_COLLECTION ?? 'knowledge_hub_articles';
   }
@@ -169,9 +168,7 @@ export class VectorStoreService implements OnModuleInit {
         throw error;
       }
       this.logger.error('Failed to ensure Qdrant collection exists');
-      throw new ServiceUnavailableException(
-        'Vector database is unavailable',
-      );
+      throw new ServiceUnavailableException('Vector database is unavailable');
     }
   }
 
@@ -183,11 +180,7 @@ export class VectorStoreService implements OnModuleInit {
       },
     };
 
-    await this.request(
-      'PUT',
-      `/collections/${this.collection}`,
-      body,
-    );
+    await this.request('PUT', `/collections/${this.collection}`, body);
   }
 
   private async request<T>(
@@ -207,9 +200,7 @@ export class VectorStoreService implements OnModuleInit {
         this.logger.error(
           `Qdrant request failed: ${method} ${path} → ${response.status} ${errorText}`,
         );
-        throw new ServiceUnavailableException(
-          'Vector database is unavailable',
-        );
+        throw new ServiceUnavailableException('Vector database is unavailable');
       }
 
       return response.json() as Promise<T>;
@@ -218,9 +209,7 @@ export class VectorStoreService implements OnModuleInit {
         throw error;
       }
       this.logger.error(`Qdrant connection error: ${method} ${path}`);
-      throw new ServiceUnavailableException(
-        'Vector database is unavailable',
-      );
+      throw new ServiceUnavailableException('Vector database is unavailable');
     }
   }
 }

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { ArticleService } from '../../article/article.service';
 import { FilterArticleDto } from '../../article/dto/filter-article.dto';
 import { ArticleStatus } from '../../common/enums';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ChunkerService } from '../chunker/chunker.service';
 import { ReindexRequestDto } from '../dto/reindex-request.dto';
 import { ReindexResponseDto } from '../dto/reindex-response.dto';
@@ -12,7 +13,6 @@ import { VectorPoint } from '../vector-store/vector-store.types';
 
 @Injectable()
 export class IndexerService {
-  private readonly indexedAt: { [articleId: string]: number } = {};
   private readonly collection =
     process.env.RAG_VECTOR_COLLECTION ?? 'knowledge_hub_articles';
 
@@ -21,6 +21,7 @@ export class IndexerService {
     private readonly chunkerService: ChunkerService,
     private readonly embeddingService: EmbeddingService,
     private readonly vectorStoreService: VectorStoreService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async indexArticles(dto: ReindexRequestDto): Promise<ReindexResponseDto> {
@@ -34,21 +35,33 @@ export class IndexerService {
 
     const articles =
       dto.articleIds && dto.articleIds.length > 0
-        ? allArticles.filter((article) =>
-            dto.articleIds!.includes(article.id),
-          )
+        ? allArticles.filter((article) => dto.articleIds!.includes(article.id))
         : allArticles;
+
+    // Load all existing index records for the selected articles in one query
+    const articleIds = articles.map((a) => a.id);
+    const existingRecords = await this.prisma.ragIndexRecord.findMany({
+      where: { articleId: { in: articleIds } },
+    });
+    const indexedAtMap: Record<string, Date> = {};
+    for (const record of existingRecords) {
+      indexedAtMap[record.articleId] = record.indexedAt;
+    }
 
     let totalChunks = 0;
 
     for (const article of articles) {
-      const lastIndexedAt = this.indexedAt[article.id];
-      if (lastIndexedAt && lastIndexedAt >= article.updatedAt) {
+      const lastIndexedAt = indexedAtMap[article.id];
+      const articleUpdatedAt = new Date(article.updatedAt);
+
+      if (lastIndexedAt && lastIndexedAt >= articleUpdatedAt) {
+        // Article unchanged since last index — count chunks without re-embedding
         const chunks = this.chunkerService.chunkText(article.content);
         totalChunks += chunks.length;
         continue;
       }
 
+      // Delete stale vectors then re-embed
       await this.vectorStoreService.deleteByArticleId(article.id);
 
       const chunks = this.chunkerService.chunkText(article.content);
@@ -68,7 +81,14 @@ export class IndexerService {
       }));
 
       await this.vectorStoreService.upsertPoints(points);
-      this.indexedAt[article.id] = article.updatedAt;
+
+      // Persist the index timestamp so it survives restarts
+      await this.prisma.ragIndexRecord.upsert({
+        where: { articleId: article.id },
+        create: { articleId: article.id, indexedAt: articleUpdatedAt },
+        update: { indexedAt: articleUpdatedAt },
+      });
+
       totalChunks += chunks.length;
     }
 
@@ -91,7 +111,11 @@ export class IndexerService {
       );
     }
 
-    delete this.indexedAt[articleId];
+    // Remove the persisted index record so the article is treated as
+    // unindexed on the next reindex run
+    await this.prisma.ragIndexRecord.deleteMany({
+      where: { articleId },
+    });
 
     return { articleId, deletedCount };
   }

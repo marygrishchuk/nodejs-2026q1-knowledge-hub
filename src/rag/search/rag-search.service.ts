@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { RagSearchRequestDto } from '../dto/rag-search-request.dto';
-import { RagSearchResponseDto, RagSearchResultDto } from '../dto/rag-search-response.dto';
+import { RagSearchResponseDto } from '../dto/rag-search-response.dto';
 import { VectorStoreService } from '../vector-store/vector-store.service';
 import { QdrantFilter, SearchResult } from '../vector-store/vector-store.types';
 
@@ -49,7 +49,10 @@ export class RagSearchService {
     const conditions: QdrantFilter['must'] = [];
 
     if (dto.articleStatus) {
-      conditions.push({ key: 'articleStatus', match: { value: dto.articleStatus } });
+      conditions.push({
+        key: 'articleStatus',
+        match: { value: dto.articleStatus },
+      });
     }
 
     if (dto.categoryId) {
@@ -105,7 +108,8 @@ export class RagSearchService {
         );
         return {
           ...candidate,
-          score: candidate.score * RERANK_BLEND + rerankScore * (1 - RERANK_BLEND),
+          score:
+            candidate.score * RERANK_BLEND + rerankScore * (1 - RERANK_BLEND),
         };
       })
       .sort((a, b) => b.score - a.score);
@@ -116,7 +120,9 @@ export class RagSearchService {
       return 0;
     }
     const lowerChunk = chunkText.toLowerCase();
-    const matchCount = queryTerms.filter((term) => lowerChunk.includes(term)).length;
+    const matchCount = queryTerms.filter((term) =>
+      lowerChunk.includes(term),
+    ).length;
     return matchCount / queryTerms.length;
   }
 }

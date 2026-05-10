@@ -20,8 +20,7 @@ export class EmbeddingService {
     this.baseUrl =
       process.env.GEMINI_API_BASE_URL ??
       'https://generativelanguage.googleapis.com';
-    this.model =
-      process.env.GEMINI_EMBEDDING_MODEL ?? 'text-embedding-004';
+    this.model = process.env.GEMINI_EMBEDDING_MODEL ?? 'text-embedding-004';
 
     if (!this.apiKey) {
       throw new Error('GEMINI_API_KEY is not configured');

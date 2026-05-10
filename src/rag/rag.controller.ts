@@ -94,9 +94,7 @@ export class RagController {
     @Param('conversationId') conversationId: string,
   ): ConversationMessageDto[] {
     if (!this.conversationStore.exists(conversationId)) {
-      throw new NotFoundException(
-        `Conversation ${conversationId} not found`,
-      );
+      throw new NotFoundException(`Conversation ${conversationId} not found`);
     }
     return this.conversationStore.getHistory(conversationId);
   }
