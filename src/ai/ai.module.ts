@@ -21,6 +21,6 @@ import { AiOutputValidator } from './validators/ai-output.validator';
     AiOutputValidator,
     AiSessionService,
   ],
-  exports: [AiService],
+  exports: [AiService, GeminiService],
 })
 export class AiModule {}

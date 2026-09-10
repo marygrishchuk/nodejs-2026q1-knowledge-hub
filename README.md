@@ -4,21 +4,56 @@ A REST API for a Knowledge Hub platform built with NestJS. Manages users, articl
 
 ## Code Reviewer: Quick Start
 
+You need **Node.js ≥ 24.10.0** (see `package.json` `engines`), **PostgreSQL**, and a copied `.env`.
+
 ### Install dependencies
 
 ```bash
 npm install
 ```
 
-### Run the app
+### Run the app (host Node + Postgres in Docker)
 
-Copy `.env.example` to `.env`, then:
+This is the path least likely to surprise reviewers: keep **`DATABASE_URL`** in `.env` pointed at **`localhost`** (as in `.env.example`), run only the database container, apply migrations from your machine, then start Nest.
 
-```bash
-npm run start:dev
-```
+1. Copy env and edit if needed:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Keep **`GEMINI_API_KEY`** non-empty (the example placeholder is enough for the server to boot; put a real key only if you exercise **`/ai`** routes).
+
+2. Start PostgreSQL:
+
+   ```bash
+   docker compose up -d db
+   ```
+
+   If port **5432** is already taken, stop the other Postgres instance or remap the `db` ports in `docker-compose.yml` and use the same port in **`DATABASE_URL`**.
+
+3. Generate the Prisma client and apply migrations (creates tables):
+
+   ```bash
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+   Optional sample data:
+
+   ```bash
+   npx prisma db seed
+   ```
+
+4. Start the API:
+
+   ```bash
+   npm run start:dev
+   ```
 
 The API is available at `http://localhost:4000`. Swagger UI is at `http://localhost:4000/doc`.
+
+**Alternative:** `docker compose up --build` starts API + Postgres together; you still must run **`npx prisma migrate deploy`** (and optionally **`db seed`**) **from the host** once, against **`localhost`**, before the API can use the schema—the production image does not ship the Prisma CLI for `exec` migrations inside the container.
 
 ### Run unit tests
 
@@ -104,24 +139,125 @@ The AI-powered features require a Google Gemini API key.
    ```
 4. Save the file and restart the application
 
-### Model used
+### Models used
 
-This application uses the **`gemini-2.5-flash`** model by default. This model is part of Google's Flash lineup and typically provides:
+| Purpose | Model |
+|---|---|
+| Text generation (summarize, translate, analyze, RAG chat) | `gemini-2.0-flash` (set via `GEMINI_MODEL`) |
+| Embeddings (RAG indexing and search) | `text-embedding-004` (set via `GEMINI_EMBEDDING_MODEL`) |
 
-- Fast response times
-- Good quality for summarization, translation, and analysis tasks
-- Support for structured JSON output
-- Generous free quota (60 requests per minute for free tier)
-
-You can change the model by updating `GEMINI_MODEL` in your `.env` file.
+You can override either model in `.env`.
 
 ### Known limitations
 
 - **Free tier quotas**: The free tier has a limit of 60 requests per minute (RPM) and 1,500 requests per day (RPD)
 - **Rate limiting**: The application implements client-side rate limiting (default: 20 RPM) to stay within free tier limits
 - **Latency**: AI responses typically take 1-3 seconds depending on content size and complexity
+- **Indexing time**: Indexing many articles is sequential (one embedding call per chunk) to respect free-tier rate limits; expect ~1-2 seconds per chunk
 - **Regional availability**: Gemini API may have different availability or quotas depending on your region
 - **Content length**: Very large articles may hit token limits; consider summarizing before analyzing
+
+---
+
+## RAG — Retrieval-Augmented Generation
+
+The RAG layer enables semantic search and grounded AI chat over indexed Knowledge Hub articles, powered by Qdrant (vector DB) and Gemini embeddings.
+
+### Vector database: Qdrant
+
+Qdrant runs as a dedicated Docker container in the same Compose stack. Data is persisted in a named volume (`qdrant_data`).
+
+### Full startup flow
+
+1. **Copy and configure env:**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Fill in your real `GEMINI_API_KEY`. The RAG variables already have sensible defaults in `.env.example`.
+
+2. **Start the full stack (app + PostgreSQL + Qdrant):**
+
+   ```bash
+   docker compose up --build
+   ```
+
+   The app waits for both `db` and `vectordb` to be healthy before starting.
+
+3. **Apply database migrations** (run once from the host):
+
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+   Optional seed data:
+
+   ```bash
+   npx prisma db seed
+   ```
+
+4. **Build the vector index:**
+
+   ```bash
+   curl -X POST http://localhost:4000/ai/rag/index \
+     -H "Content-Type: application/json" \
+     -H "Accept: application/json" \
+     -d '{"onlyPublished": true}'
+   ```
+
+   Response:
+   ```json
+   { "indexedArticles": 5, "indexedChunks": 23, "vectorCollection": "knowledge_hub_articles" }
+   ```
+
+5. **Semantic search:**
+
+   ```bash
+   curl -X POST http://localhost:4000/ai/rag/search \
+     -H "Content-Type: application/json" \
+     -H "Accept: application/json" \
+     -d '{"query": "how to use dependency injection", "limit": 3}'
+   ```
+
+6. **RAG chat:**
+
+   ```bash
+   curl -X POST http://localhost:4000/ai/rag/chat \
+     -H "Content-Type: application/json" \
+     -H "Accept: application/json" \
+     -d '{"question": "What articles cover NestJS best practices?"}'
+   ```
+
+   Save the returned `conversationId` and pass it in follow-up requests to maintain context.
+
+7. **Remove an article from the index:**
+
+   ```bash
+   curl -X DELETE http://localhost:4000/ai/rag/index/articles/<articleId> \
+     -H "Accept: application/json"
+   ```
+
+### RAG environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `GEMINI_EMBEDDING_MODEL` | `text-embedding-004` | Gemini model used for embeddings |
+| `RAG_VECTOR_DB_PROVIDER` | `qdrant` | Vector DB provider |
+| `RAG_VECTOR_DB_URL` | `http://vectordb:6333` | Qdrant service URL (internal Compose hostname) |
+| `RAG_VECTOR_COLLECTION` | `knowledge_hub_articles` | Qdrant collection name |
+| `RAG_CHUNK_SIZE` | `800` | Characters per chunk |
+| `RAG_CHUNK_OVERLAP` | `200` | Overlap between consecutive chunks |
+| `RAG_CONVERSATION_MAX_MESSAGES` | `20` | Max messages retained per RAG conversation |
+
+### Known RAG limitations
+
+- **Indexing is sequential**: each chunk requires one Gemini embedding call; large article sets take proportionally longer
+- **Free-tier rate limits**: Gemini free tier allows ~1,500 embedding calls/day; large corpora may require batching across days
+- **In-memory conversation store**: conversation history is lost on server restart
+- **Qdrant free tier**: no persistence concerns — Qdrant is self-hosted; data persists in the Docker volume
+
+---
 
 ## Running the application
 

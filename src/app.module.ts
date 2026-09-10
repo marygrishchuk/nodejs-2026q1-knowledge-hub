@@ -9,6 +9,7 @@ import { AccessTokenGuard } from './common/guards/access-token.guard';
 import { JsonApiAccessGuard } from './common/guards/json-api-access.guard';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { PrismaModule } from './prisma/prisma.module';
+import { RagModule } from './rag/rag.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     ArticleModule,
     CommentModule,
     AiModule,
+    RagModule,
   ],
   providers: [
     LoggingMiddleware,
