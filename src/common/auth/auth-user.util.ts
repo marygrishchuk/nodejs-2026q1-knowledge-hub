@@ -1,6 +1,6 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 import { UserRole } from '../enums';
+import { ForbiddenError, UnauthorizedError } from '../errors/custom-errors';
 
 export interface AuthenticatedUser {
   userId: string;
@@ -14,7 +14,7 @@ export function readAuthenticatedUser(request: Request): AuthenticatedUser {
   };
   const user = requestWithUser.user;
   if (!user) {
-    throw new UnauthorizedException('Unauthorized');
+    throw new UnauthorizedError('Unauthorized');
   }
 
   if (
@@ -22,7 +22,7 @@ export function readAuthenticatedUser(request: Request): AuthenticatedUser {
     typeof user.login !== 'string' ||
     !isUserRole(user.role)
   ) {
-    throw new UnauthorizedException('Unauthorized');
+    throw new UnauthorizedError('Unauthorized');
   }
 
   return {
@@ -34,31 +34,38 @@ export function readAuthenticatedUser(request: Request): AuthenticatedUser {
 
 export function assertAdmin(user: AuthenticatedUser): void {
   if (user.role !== UserRole.ADMIN) {
-    throw new ForbiddenException('Forbidden resource');
+    throw new ForbiddenError('Forbidden resource');
   }
 }
 
-export function assertAdminOrSelf(user: AuthenticatedUser, resourceUserId: string): void {
+export function assertAdminOrSelf(
+  user: AuthenticatedUser,
+  resourceUserId: string,
+): void {
   if (user.role === UserRole.ADMIN || user.userId === resourceUserId) {
     return;
   }
-  throw new ForbiddenException('Forbidden resource');
+  throw new ForbiddenError('Forbidden resource');
 }
 
 export function assertEditorOrAdmin(user: AuthenticatedUser): void {
   if (user.role === UserRole.EDITOR || user.role === UserRole.ADMIN) {
     return;
   }
-  throw new ForbiddenException('Forbidden resource');
+  throw new ForbiddenError('Forbidden resource');
 }
 
 export function assertNotViewer(user: AuthenticatedUser): void {
   if (user.role !== UserRole.VIEWER) {
     return;
   }
-  throw new ForbiddenException('Forbidden resource');
+  throw new ForbiddenError('Forbidden resource');
 }
 
 function isUserRole(role: unknown): role is UserRole {
-  return role === UserRole.ADMIN || role === UserRole.EDITOR || role === UserRole.VIEWER;
+  return (
+    role === UserRole.ADMIN ||
+    role === UserRole.EDITOR ||
+    role === UserRole.VIEWER
+  );
 }

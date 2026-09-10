@@ -48,7 +48,9 @@ export class UserService {
   async create(dto: CreateUserDto): Promise<Omit<User, 'password'>> {
     const existingUser = await this.findRawByLogin(dto.login);
     if (existingUser) {
-      throw new BadRequestException(`User with login ${dto.login} already exists`);
+      throw new BadRequestException(
+        `User with login ${dto.login} already exists`,
+      );
     }
     const hashedPassword = await this.hashPassword(dto.password);
     const row = await this.prisma.user.create({
@@ -117,7 +119,10 @@ export class UserService {
     return bcrypt.hash(password, CRYPT_SALT);
   }
 
-  async comparePassword(rawPassword: string, hashedPassword: string): Promise<boolean> {
+  async comparePassword(
+    rawPassword: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
     return bcrypt.compare(rawPassword, hashedPassword);
   }
 }
