@@ -12,6 +12,10 @@ import {
   SWAGGER_OPENAPI_YAML_PATH,
   SWAGGER_UI_PATH_PREFIX,
 } from '../constants/api-access.constant';
+import {
+  PUBLIC_AUTH_PATHS,
+  PUBLIC_BASE_PATHS,
+} from '../constants/auth.constant';
 
 @Injectable()
 export class JsonApiAccessGuard implements CanActivate {
@@ -40,6 +44,15 @@ export class JsonApiAccessGuard implements CanActivate {
   }
 
   private isDocumentationPath(path: string): boolean {
+    if (
+      path === PUBLIC_BASE_PATHS.root ||
+      path === PUBLIC_AUTH_PATHS.signup ||
+      path === PUBLIC_AUTH_PATHS.login ||
+      path === PUBLIC_AUTH_PATHS.refresh
+    ) {
+      return true;
+    }
+
     return (
       path === SWAGGER_OPENAPI_JSON_PATH ||
       path === SWAGGER_OPENAPI_YAML_PATH ||
